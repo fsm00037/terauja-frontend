@@ -36,6 +36,8 @@ export default function DashboardPage() {
     try {
       const role = localStorage.getItem("userRole")
       const id = localStorage.getItem("userId")
+      // Pass ID if user is logged in (admin or psychologist)
+      // The requirement says admin should act like a psychologist regarding assigned patients.
       const filterId = (id) ? id : undefined
 
       const data = await api.getDashboardStats(filterId)
