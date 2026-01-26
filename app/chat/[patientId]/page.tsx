@@ -26,6 +26,7 @@ export default function PatientChatPage() {
   const [inputMessage, setInputMessage] = useState("")
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+  const [isSending, setIsSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const { t } = useLanguage()
@@ -62,11 +63,16 @@ export default function PatientChatPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputMessage.trim()) return
+    if (!inputMessage.trim() || isSending) return
 
+    setIsSending(true)
     try {
       // Send as Therapist (isFromPatient = false)
-      const newMsg = await api.sendMessage(patientId, inputMessage, false);
+      const newMsg = await api.sendMessage({
+        patient_id: patientId,
+        content: inputMessage,
+        is_from_patient: false
+      });
       if (newMsg) {
         setInputMessage("")
         setSuggestions([]) // Clear suggestions on send
@@ -74,14 +80,18 @@ export default function PatientChatPage() {
       }
     } catch (error) {
       console.error("Failed to send message", error);
+    } finally {
+      setIsSending(false)
     }
   }
 
   const handleGetSuggestions = async () => {
     setLoadingSuggestions(true)
     try {
-      const result = await api.getChatRecommendations(messages)
-      setSuggestions(result)
+      const result = await api.getChatRecommendations(messages, Number(patientId))
+      if (result && result.recommendations) {
+        setSuggestions(result.recommendations)
+      }
     } catch (e) {
       console.error(e)
     } finally {
@@ -191,10 +201,12 @@ export default function PatientChatPage() {
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   placeholder={t("typeYourMessage")}
+                  disabled={isSending}
                   className="flex-1 h-12 rounded-xl border-soft-gray focus:border-calm-teal focus:ring-calm-teal"
                 />
                 <Button
                   type="submit"
+                  disabled={isSending}
                   className="h-12 px-6 rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white shadow-md"
                 >
                   <Send className="h-5 w-5" />
