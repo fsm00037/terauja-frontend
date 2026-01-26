@@ -21,8 +21,6 @@ export default function PatientsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [patients, setPatients] = useState<Patient[]>([])
 
-
-
   const loadPatients = async () => {
     const role = localStorage.getItem("userRole")
     const id = localStorage.getItem("userId")

@@ -9,7 +9,41 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { ArrowLeft, Calendar, FileText, Plus, Trash2, Edit, Save, X, Bold, Italic, BarChart2, MessageSquare, ChevronUp, ChevronDown, ClipboardList, Clock } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  ArrowLeft,
+  Calendar,
+  FileText,
+  Plus,
+  Trash2,
+  Edit,
+  Save,
+  X,
+  Bold,
+  Italic,
+  BarChart2,
+  MessageSquare,
+  ChevronUp,
+  ChevronDown,
+  ClipboardList,
+  Clock,
+  Activity,
+  Heart,
+  Brain,
+  Smile,
+  Zap,
+  Moon,
+  Sun,
+  Flame,
+  Star,
+  FileQuestion,
+} from "lucide-react"
 import { ChatTranscript } from "@/components/chat-transcript"
 import { useLanguage } from "@/contexts/language-context"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
@@ -23,6 +57,20 @@ const NOTE_COLORS = [
   { value: "bg-soft-lavender", label: "Lavender" },
   { value: "bg-calm-teal/20", label: "Mint" },
   { value: "bg-amber-100", label: "Yellow" },
+]
+
+// Available Icons for Questionnaires
+const AVAILABLE_ICONS = [
+  { name: "Activity", icon: Activity },
+  { name: "Heart", icon: Heart },
+  { name: "Brain", icon: Brain },
+  { name: "Smile", icon: Smile },
+  { name: "Zap", icon: Zap },
+  { name: "Moon", icon: Moon },
+  { name: "Sun", icon: Sun },
+  { name: "Flame", icon: Flame },
+  { name: "Star", icon: Star },
+  { name: "FileQuestion", icon: FileQuestion },
 ]
 
 interface Session extends api.Session { }
@@ -42,7 +90,10 @@ export default function PatientStatisticsPage() {
   interface AnsweredQuestionnaire {
     id: string
     questionnaireTitle: string
+    icon: string
     date: string
+    rawDate: Date
+    time: string
     answers: {
       questionText: string
       answer: string | number
@@ -50,70 +101,48 @@ export default function PatientStatisticsPage() {
       options?: string[]
       maxValue?: number
     }[]
-    isDelayed: boolean
   }
 
   const [questionnaireHistory, setQuestionnaireHistory] = useState<AnsweredQuestionnaire[]>([])
-  const [activeAssignments, setActiveAssignments] = useState<api.Assignment[]>([])
-  const [statusFilter, setStatusFilter] = useState<"all" | "onTime" | "late">("all")
+  const [questionnaireFilter, setQuestionnaireFilter] = useState<string>("all")
 
-  const fetchQuestionnaireData = useCallback(() => {
-    if (!patientId) return
-    api.getPatientAssignments(patientId).then((assignments) => {
-      // Filter for completed assignments with answers
-      const completed = assignments.filter(a => a.status === 'completed' && a.answers && a.answers.length > 0)
-      setActiveAssignments(assignments.filter(a => a.status !== 'completed'))
-
-      const history: AnsweredQuestionnaire[] = completed.map(a => ({
-        id: a.id,
-        questionnaireTitle: a.questionnaire?.title || "Cuestionario",
-        date: a.assignedAt ? new Date(a.assignedAt).toLocaleDateString() : "Fecha desconocida",
-        isDelayed: false,
-        answers: (a.answers || []).map((ans: any, idx: number) => {
-          const def = a.questionnaire?.questions?.find((q: any) => q.question_text === ans.question_text) || a.questionnaire?.questions?.[idx]
-          return {
-            questionText: ans.question_text || "Pregunta",
-            answer: ans.answer,
-            type: (def as any)?.type || (def as any)?.question_type || (def as any)?.inputType || "openText",
-            options: (def as any)?.options || [],
-            maxValue: (def as any)?.max || (def as any)?.scale_max || 5
-          }
-        })
-      }))
-
-      // Also fetch completions for accurate status
-      api.getQuestionnaireCompletions(patientId).then(completions => {
-        if (completions.length > 0) {
-          const newHistory: AnsweredQuestionnaire[] = completions.map(c => ({
-            id: c.id.toString(),
-            questionnaireTitle: c.questionnaire?.title || "Cuestionario",
-            date: new Date(c.completedAt).toLocaleDateString(),
-            isDelayed: c.isDelayed,
-            answers: c.answers.map((ans: any, idx: number) => {
-              const def = c.questionnaire?.questions?.find((q: any) => (q.text === ans.question_text || q.question_text === ans.question_text)) || c.questionnaire?.questions?.[idx]
-              return {
-                questionText: ans.question_text || "Pregunta",
-                answer: ans.answer,
-                type: (def as any)?.type || (def as any)?.question_type || (def as any)?.inputType || "openText",
-                options: (def as any)?.options || [],
-                maxValue: (def as any)?.max || (def as any)?.scale_max || 5
-              }
-            })
-          }))
-          setQuestionnaireHistory(newHistory)
-        } else {
-          setQuestionnaireHistory(history)
-        }
-      })
-    })
-  }, [patientId])
+  // Compute unique titles for filter
+  const uniqueQuestionnaires = Array.from(new Set(questionnaireHistory.map(q => q.questionnaireTitle)))
 
   useEffect(() => {
-    fetchQuestionnaireData()
-    // Poll every 30 seconds
-    const interval = setInterval(fetchQuestionnaireData, 30000)
-    return () => clearInterval(interval)
-  }, [fetchQuestionnaireData])
+    if (patientId) {
+      api.getQuestionnaireCompletions(patientId).then((completions) => {
+        // Filter for completed completions with answers
+        const completed = completions.filter(c => c.status === 'completed' && c.answers && c.answers.length > 0)
+
+        const history: AnsweredQuestionnaire[] = completed.map(c => ({
+          id: c.id,
+          questionnaireTitle: c.questionnaire?.title || "Cuestionario",
+          icon: c.questionnaire?.icon || "FileQuestion",
+          date: c.completedAt ? new Date(c.completedAt).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Fecha desconocida",
+          rawDate: c.completedAt ? new Date(c.completedAt) : new Date(),
+          time: c.completedAt ? new Date(c.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--",
+          answers: (c.answers || []).map((ans: any, idx: number) => {
+            // Find the definition if possible (we might need full questionnaire details, but let's try to map from what we have)
+            // c.questionnaire in completion might be slim (title, icon). 
+            // Ideally backend sends full questionnaire or we fetch it. 
+            // For now, let's assume we rely on the answer text or try to fetch definitions.
+            // Actually, getQuestionnaireCompletions returns questionnaire title/icon.
+            // But answers usually contain { question_text, answer, ... } based on how we save them.
+
+            return {
+              questionText: ans.question_text || ans.questionId || "Pregunta",
+              answer: ans.value || ans.answer, // Check both value and answer keys
+              type: ans.type || "openText",
+              options: ans.options || [],
+              maxValue: ans.max_value || 5
+            }
+          })
+        }))
+        setQuestionnaireHistory(history)
+      })
+    }
+  }, [patientId])
 
   const [expandedQuestionnaireId, setExpandedQuestionnaireId] = useState<string | null>(null)
 
@@ -647,13 +676,13 @@ export default function PatientStatisticsPage() {
           </div>
         </div>
 
-        <Card className="rounded-2xl border-soft-gray shadow-soft">
-          <CardHeader className="border-b border-soft-gray pb-0">
-            <div className="flex gap-2">
+        <Card className="rounded-2xl border-soft-gray shadow-soft p-0 overflow-hidden">
+          <CardHeader className="border-b border-soft-gray p-0">
+            <div className="flex gap-2 px-6 pt-2">
               <button
                 onClick={() => setActiveTab("assessment")}
-                className={`px-6 py-3 text-sm font-medium transition-all rounded-t-xl ${activeTab === "assessment"
-                  ? "bg-calm-teal text-white"
+                className={`px-6 py-3 text-sm font-medium transition-all rounded-t-xl translate-y-[1px] ${activeTab === "assessment"
+                  ? "bg-calm-teal text-white border-b-0 shadow-sm"
                   : "text-muted-foreground hover:text-neutral-charcoal hover:bg-muted/30"
                   }`}
               >
@@ -661,8 +690,8 @@ export default function PatientStatisticsPage() {
               </button>
               <button
                 onClick={() => setActiveTab("sessions")}
-                className={`px-6 py-3 text-sm font-medium transition-all rounded-t-xl ${activeTab === "sessions"
-                  ? "bg-calm-teal text-white"
+                className={`px-6 py-3 text-sm font-medium transition-all rounded-t-xl translate-y-[1px] ${activeTab === "sessions"
+                  ? "bg-calm-teal text-white border-b-0 shadow-sm"
                   : "text-muted-foreground hover:text-neutral-charcoal hover:bg-muted/30"
                   }`}
               >
@@ -670,8 +699,8 @@ export default function PatientStatisticsPage() {
               </button>
               <button
                 onClick={() => setActiveTab("chat")}
-                className={`px-6 py-3 text-sm font-medium transition-all rounded-t-xl ${activeTab === "chat"
-                  ? "bg-calm-teal text-white"
+                className={`px-6 py-3 text-sm font-medium transition-all rounded-t-xl translate-y-[1px] ${activeTab === "chat"
+                  ? "bg-calm-teal text-white border-b-0 shadow-sm"
                   : "text-muted-foreground hover:text-neutral-charcoal hover:bg-muted/30"
                   }`}
               >
@@ -679,8 +708,8 @@ export default function PatientStatisticsPage() {
               </button>
               <button
                 onClick={() => setActiveTab("notes")}
-                className={`px-6 py-3 text-sm font-medium transition-all rounded-t-xl ${activeTab === "notes"
-                  ? "bg-calm-teal text-white"
+                className={`px-6 py-3 text-sm font-medium transition-all rounded-t-xl translate-y-[1px] ${activeTab === "notes"
+                  ? "bg-calm-teal text-white border-b-0 shadow-sm"
                   : "text-muted-foreground hover:text-neutral-charcoal hover:bg-muted/30"
                   }`}
               >
@@ -688,8 +717,8 @@ export default function PatientStatisticsPage() {
               </button>
               <button
                 onClick={() => setActiveTab("questionnaires")}
-                className={`px-6 py-3 text-sm font-medium transition-all rounded-t-xl ${activeTab === "questionnaires"
-                  ? "bg-calm-teal text-white"
+                className={`px-6 py-3 text-sm font-medium transition-all rounded-t-xl translate-y-[1px] ${activeTab === "questionnaires"
+                  ? "bg-calm-teal text-white border-b-0 shadow-sm"
                   : "text-muted-foreground hover:text-neutral-charcoal hover:bg-muted/30"
                   }`}
               >
@@ -738,7 +767,7 @@ export default function PatientStatisticsPage() {
                         : stat.color === "amber"
                           ? "bg-amber-500/10 text-amber-600"
                           : "bg-calm-teal/10 text-calm-teal"
-                        } border - 0 capitalize`}
+                        } border-0 capitalize`}
                     >
                       {t(stat.status)}
                     </Badge>
@@ -889,15 +918,15 @@ export default function PatientStatisticsPage() {
                         <button
                           key={metric.id}
                           onClick={() => setActiveMetric(metric.id)}
-                          className={`p - 4 rounded - xl border transition - all flex flex - col items - center text - center gap - 2 ${isActive
+                          className={`p-4 rounded-xl border transition-all flex flex-col items-center text-center gap-2 ${isActive
                             ? "border-calm-teal bg-calm-teal/5 shadow-sm"
                             : "border-soft-gray bg-white hover:border-calm-teal/30"
-                            } `}
+                            }`}
                         >
-                          <div className={`p - 2 rounded - lg ${isActive ? "bg-calm-teal text-white" : "bg-muted text-muted-foreground"} `}>
+                          <div className={`p-2 rounded-lg ${isActive ? "bg-calm-teal text-white" : "bg-muted text-muted-foreground"}`}>
                             <Icon className="h-4 w-4" />
                           </div>
-                          <span className={`text - xs font - medium ${isActive ? "text-calm-teal" : "text-muted-foreground"} `}>
+                          <span className={`text-xs font-medium ${isActive ? "text-calm-teal" : "text-muted-foreground"}`}>
                             {t(metric.label)}
                           </span>
                         </button>
@@ -1357,19 +1386,24 @@ export default function PatientStatisticsPage() {
         {activeTab === "questionnaires" && (
           <Card className="rounded-2xl border-soft-gray shadow-soft">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-neutral-charcoal">{t("questionnaires")}</CardTitle>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-medium text-muted-foreground uppercase">Filtro:</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="h-8 px-2 rounded-lg border border-soft-gray bg-white text-xs focus:outline-none focus:ring-1 focus:ring-calm-teal"
-                  >
-                    <option value="all">Todos</option>
-                    <option value="onTime">A tiempo</option>
-                    <option value="late">Tarde</option>
-                  </select>
+              <div className="flex items-center gap-3 justify-between w-full">
+                <div>
+                  <CardTitle className="text-neutral-charcoal">{t("questionnaires")}</CardTitle>
+                </div>
+                <div className="w-[200px]">
+                  <Select value={questionnaireFilter} onValueChange={setQuestionnaireFilter}>
+                    <SelectTrigger className="h-9 rounded-xl border-soft-gray bg-white">
+                      <SelectValue placeholder="Filtrar por tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los cuestionarios</SelectItem>
+                      {uniqueQuestionnaires.map((title) => (
+                        <SelectItem key={title} value={title}>
+                          {title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardHeader>
@@ -1382,153 +1416,168 @@ export default function PatientStatisticsPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {questionnaireHistory
-                    .filter(item => {
-                      if (statusFilter === "onTime") return !item.isDelayed
-                      if (statusFilter === "late") return item.isDelayed
-                      return true
+                  {(() => {
+                    // Group by week
+                    const filtered = questionnaireHistory
+                      .filter(item => questionnaireFilter === "all" || item.questionnaireTitle === questionnaireFilter)
+                      .sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime())
+
+                    const grouped: Record<string, AnsweredQuestionnaire[]> = {}
+
+                    filtered.forEach(item => {
+                      const date = new Date(item.rawDate)
+                      // Get Monday of the week
+                      const day = date.getDay()
+                      const diff = date.getDate() - day + (day === 0 ? -6 : 1) // adjust when day is sunday
+                      const monday = new Date(date.setDate(diff))
+                      monday.setHours(0, 0, 0, 0)
+
+                      const key = monday.toISOString()
+                      if (!grouped[key]) grouped[key] = []
+                      grouped[key].push(item)
                     })
-                    .map((item, index) => (
-                      <div key={item.id} className="group relative">
-                        {/* Timeline connector */}
-                        {index !== questionnaireHistory.length - 1 && (
-                          <div className="absolute left-[23px] top-[60px] bottom-[-16px] w-0.5 bg-gradient-to-b from-calm-teal/20 to-transparent" />
-                        )}
 
-                        <div
-                          className="relative p-5 rounded-2xl border border-soft-gray bg-gradient-to-br from-white to-calm-teal/5 hover:shadow-lg transition-all duration-300 hover:border-calm-teal/50 cursor-pointer"
-                          onClick={() => toggleQuestionnaireDetails(item.id)}
-                        >
-                          <div className="flex items-start gap-4">
-                            {/* Date badge */}
-                            <div className="shrink-0">
-                              <div className="h-12 w-12 rounded-xl bg-calm-teal flex items-center justify-center shadow-md">
-                                <Calendar className="h-5 w-5 text-white" />
-                              </div>
-                            </div>
+                    // Sort weeks (newest first)
+                    const sortedWeeks = Object.keys(grouped).sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
 
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-4 mb-3">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-bold text-lg text-neutral-charcoal group-hover:text-calm-teal transition-colors">
-                                      {item.questionnaireTitle}
-                                    </h3>
-                                    {item.isDelayed && (
-                                      <Badge variant="destructive" className="bg-soft-coral/10 text-soft-coral border-soft-coral/20 text-[10px] h-5">Tarde</Badge>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Clock className="h-3.5 w-3.5" />
-                                    <span>{item.date}</span>
-                                    <span className="text-muted-foreground/50">•</span>
-                                    <span>{item.answers.length} {item.answers.length === 1 ? t("question") : t("questions")}</span>
-                                  </div>
-                                </div>
+                    return sortedWeeks.map(weekKey => {
+                      const weekDate = new Date(weekKey)
+                      const weekLabel = `Semana del ${weekDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}`
 
-                                <div className="shrink-0 flex items-center pr-2">
-                                  {expandedQuestionnaireId === item.id ? (
-                                    <ChevronUp className="h-5 w-5 text-calm-teal" />
-                                  ) : (
-                                    <ChevronDown className="h-5 w-5 text-muted-foreground/30" />
-                                  )}
-                                </div>
-                              </div>
+                      return (
+                        <div key={weekKey} className="relative">
+                          <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm py-2 px-3 rounded-lg border border-gray-100 mb-4 inline-block shadow-sm">
+                            <h4 className="text-sm font-semibold text-neutral-charcoal capitalize flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-calm-teal" />
+                              {weekLabel}
+                            </h4>
+                          </div>
 
-                              {/* Expanded details */}
-                              {expandedQuestionnaireId === item.id && (
-                                <div className="mt-4 pt-4 border-t border-soft-gray/50 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                                  <div className="grid gap-3">
-                                    {item.answers.map((ans, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="bg-white/60 border border-soft-gray/50 p-5 rounded-xl hover:border-calm-teal/50 transition-colors shadow-sm"
-                                      >
-                                        <p className="text-sm font-medium text-neutral-charcoal mb-4 leading-relaxed">
-                                          <span className="text-calm-teal font-bold mr-2">{idx + 1}.</span>
-                                          {ans.questionText}
-                                        </p>
+                          <div className="space-y-4 pl-2 border-l-2 border-soft-gray/30 ml-3">
+                            {grouped[weekKey].map((item, index) => (
+                              <div key={item.id} className="group relative pl-6">
 
-                                        {/* Render based on Type */}
-                                        {(ans.type === 'likert' || ans.type === 'scale') ? (
-                                          <div className="space-y-4">
-                                            <div className="text-center py-2">
-                                              <div className="inline-flex items-baseline gap-1.5">
-                                                <span className="text-4xl font-bold text-calm-teal">
-                                                  {ans.answer}
-                                                </span>
-                                                <span className="text-lg text-muted-foreground font-medium">/ {ans.maxValue || 5}</span>
-                                              </div>
-                                            </div>
-                                            {/* Slider-like Visualization */}
-                                            <div className="relative w-full h-2 bg-muted/30 rounded-full overflow-hidden">
-                                              <div
-                                                className="absolute top-0 left-0 h-full bg-calm-teal rounded-full transition-all duration-500"
-                                                style={{ width: `${(Number(ans.answer) / (ans.maxValue || 5)) * 100}%` }}
-                                              />
-                                            </div>
-                                            <div className="flex justify-between text-xs font-medium px-1 mt-1">
-                                              <span className="text-calm-teal">Mínimo (1)</span>
-                                              <span className="text-calm-teal">Máximo ({ans.maxValue || 5})</span>
-                                            </div>
+
+                                <div
+                                  className="relative p-5 rounded-2xl border border-soft-gray bg-white bg-gradient-to-br from-white to-calm-teal/5 hover:shadow-lg transition-all duration-300 hover:border-calm-teal/50 cursor-pointer"
+                                  onClick={() => toggleQuestionnaireDetails(item.id)}
+                                >
+                                  <div className="flex items-start gap-4">
+                                    {/* Date badge */}
+                                    <div className="shrink-0">
+                                      {(() => {
+                                        const IconComponent = AVAILABLE_ICONS.find(i => i.name === item.icon)?.icon || Calendar
+                                        return (
+                                          <div className="h-12 w-12 rounded-xl bg-calm-teal flex items-center justify-center shadow-md">
+                                            <IconComponent className="h-5 w-5 text-white" />
                                           </div>
-                                        ) : ans.type === 'frequency' ? (
-                                          <div className="flex flex-wrap gap-2 mt-2">
-                                            {(ans.options && ans.options.length > 0
-                                              ? ans.options
-                                              : ["Nunca", "Raramente", "A veces", "Frecuentemente", "Siempre"]
-                                            ).map((opt) => (
-                                              <span
-                                                key={opt}
-                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${ans.answer === opt
-                                                  ? "bg-calm-teal text-white border-calm-teal shadow-md"
-                                                  : "bg-white text-muted-foreground border-soft-gray"
-                                                  }`}
+                                        )
+                                      })()}
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start justify-between gap-4 mb-3">
+                                        <div className="flex-1">
+                                          <h3 className="font-bold text-lg text-neutral-charcoal mb-1 group-hover:text-calm-teal transition-colors">
+                                            {item.questionnaireTitle}
+                                          </h3>
+                                          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                                            <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                                              <Calendar className="h-3.5 w-3.5 text-calm-teal" />
+                                              <span className="font-medium">{item.date}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                                              <Clock className="h-3.5 w-3.5 text-calm-teal" />
+                                              <span className="font-medium">{item.time}</span>
+                                            </div>
+                                            <span className="bg-gray-50 px-2 py-1 rounded-md border border-gray-100 font-medium">{item.answers.length} {item.answers.length === 1 ? t("question") : t("questions")}</span>
+                                          </div>
+                                        </div>
+
+                                        <div className="shrink-0 flex items-center pr-2">
+                                          {expandedQuestionnaireId === item.id ? (
+                                            <ChevronUp className="h-5 w-5 text-calm-teal" />
+                                          ) : (
+                                            <ChevronDown className="h-5 w-5 text-muted-foreground/30" />
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Expanded details */}
+                                      {expandedQuestionnaireId === item.id && (
+                                        <div className="mt-4 pt-4 border-t border-soft-gray/50 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                          <div className="grid gap-3">
+                                            {item.answers.map((ans, idx) => (
+                                              <div
+                                                key={idx}
+                                                className="bg-white/60 border border-soft-gray/50 p-5 rounded-xl hover:border-calm-teal/50 transition-colors shadow-sm"
                                               >
-                                                {opt}
-                                              </span>
+                                                <p className="text-sm font-medium text-neutral-charcoal mb-4 leading-relaxed">
+                                                  <span className="text-calm-teal font-bold mr-2">{idx + 1}.</span>
+                                                  {ans.questionText}
+                                                </p>
+
+                                                {/* Render based on Type */}
+                                                {(ans.type === 'likert' || ans.type === 'scale') ? (
+                                                  <div className="space-y-4">
+                                                    <div className="text-center py-2">
+                                                      <div className="inline-flex items-baseline gap-1.5">
+                                                        <span className="text-4xl font-bold text-calm-teal">
+                                                          {ans.answer}
+                                                        </span>
+                                                        <span className="text-lg text-muted-foreground font-medium">/ {ans.maxValue || 5}</span>
+                                                      </div>
+                                                    </div>
+                                                    {/* Slider-like Visualization */}
+                                                    <div className="relative w-full h-2 bg-muted/30 rounded-full overflow-hidden">
+                                                      <div
+                                                        className="absolute top-0 left-0 h-full bg-calm-teal rounded-full transition-all duration-500"
+                                                        style={{ width: `${(Number(ans.answer) / (ans.maxValue || 5)) * 100}%` }}
+                                                      />
+                                                    </div>
+                                                    <div className="flex justify-between text-xs font-medium px-1 mt-1">
+                                                      <span className="text-calm-teal">Mínimo (1)</span>
+                                                      <span className="text-calm-teal">Máximo ({ans.maxValue || 5})</span>
+                                                    </div>
+                                                  </div>
+                                                ) : ans.type === 'frequency' ? (
+                                                  <div className="flex flex-wrap gap-2 mt-2">
+                                                    {(ans.options && ans.options.length > 0
+                                                      ? ans.options
+                                                      : ["Nunca", "Raramente", "A veces", "Frecuentemente", "Siempre"]
+                                                    ).map((opt, i) => (
+                                                      <span
+                                                        key={i}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${(ans.answer === opt || ans.answer === i) // Simple check, might need refinement based on exact stored value
+                                                          ? "bg-calm-teal text-white border-calm-teal shadow-md"
+                                                          : "bg-white text-muted-foreground border-soft-gray/50"
+                                                          }`}
+                                                      >
+                                                        {opt}
+                                                      </span>
+                                                    ))}
+                                                  </div>
+                                                ) : (
+                                                  <div className="bg-white p-3 rounded-lg border border-soft-gray/50 text-neutral-charcoal/80 text-sm">
+                                                    {ans.answer}
+                                                  </div>
+                                                )}
+                                              </div>
                                             ))}
                                           </div>
-                                        ) : (
-                                          <div className="mt-2">
-                                            <div className="w-full p-3 rounded-xl bg-white/50 border-2 border-soft-gray/50">
-                                              <p className="text-sm text-neutral-charcoal leading-relaxed">
-                                                {ans.answer}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    ))}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      </div>
-                    ))}
-                </div>
-              )}
-
-              {activeAssignments.length > 0 && (
-                <div className="mt-10 border-t border-soft-gray pt-6">
-                  <h3 className="text-sm font-bold text-neutral-charcoal mb-4 uppercase tracking-wider flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-calm-teal" />
-                    Asignaciones Activas
-                  </h3>
-                  <div className="grid gap-3">
-                    {activeAssignments.map(a => (
-                      <div key={a.id} className="p-4 rounded-xl border border-soft-gray bg-muted/10 flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-neutral-charcoal">{a.questionnaire?.title || "Cuestionario"}</p>
-                          <p className="text-xs text-muted-foreground">{a.frequencyCount} veces {a.frequencyType === 'weekly' ? 'por semana' : 'al día'}</p>
-                        </div>
-                        <Badge variant="outline" className="border-calm-teal/30 text-calm-teal">{t(a.status)}</Badge>
-                      </div>
-                    ))}
-                  </div>
+                      )
+                    })
+                  })()}
                 </div>
               )}
             </CardContent>
@@ -1538,3 +1587,4 @@ export default function PatientStatisticsPage() {
     </DashboardLayout >
   )
 }
+

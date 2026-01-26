@@ -67,6 +67,7 @@ const translations = {
     risk: "Risk",
     lastSession: "Last Session",
     viewDetails: "View Details",
+    details: "Details",
     deletePatient: "Delete Patient",
     confirmDelete: "Are you sure you want to delete this patient?",
     importAssessmentDesc: "Import Assessment",
@@ -245,6 +246,9 @@ const translations = {
     noQuestionnairesHistory: "No completed questionnaires found.",
     questions: "Questions",
     confirmDeleteSession: "Are you sure you want to delete this session?",
+    progress: "Progress",
+    scheduled: "Scheduled",
+
 
     // Assignments
     selectQuestionnaire: "Select Questionnaire",
@@ -319,6 +323,7 @@ const translations = {
     risk: "Riesgo",
     lastSession: "Última Sesión",
     viewDetails: "Ver Detalles",
+    details: "Detalles",
     deletePatient: "Eliminar Paciente",
     confirmDelete: "¿Estás seguro de que quieres eliminar este paciente?",
     importAssessmentDesc: "Importar Evaluación",
@@ -487,7 +492,7 @@ const translations = {
     // Questionnaires
     questionnaire: "Cuestionario",
     activePeriod: "Periodo Activo",
-    manageQuestionnaires: "Gestionar Cuestionarios y asignaciones de pacientes",
+    manageQuestionnaires: "Gestionar cestionarios y asignaciones de pacientes",
     questionnaires: "Cuestionarios",
     createQuestionnaire: "Crear Cuestionario",
     selectIcon: "Seleccionar Icono",
@@ -514,6 +519,9 @@ const translations = {
     hideDetails: "Ocultar Detalles",
     noQuestionnairesHistory: "No se encontraron cuestionarios completados.",
     editQuestionnaire: "Editar Cuestionario",
+    progress: "Progreso",
+    scheduled: "Programado",
+
     // Assignments
     selectQuestionnaire: "Seleccionar Cuestionario",
     selectPatient: "Seleccionar Paciente",

@@ -644,7 +644,7 @@ export async function createAssignment(assignment: Omit<Assignment, "id">): Prom
     }
 }
 
-export async function updateAssignmentStatus(id: string, status: "active" | "paused"): Promise<boolean> {
+export async function updateAssignmentStatus(id: string, status: "active" | "paused" | "completed"): Promise<boolean> {
     try {
         const res = await fetchWithAuth(`${API_URL}/assignments/${id}`, {
             method: 'PATCH',
@@ -713,14 +713,14 @@ export interface QuestionnaireCompletion {
     assignmentId: string
     patientId: string
     questionnaireId: string
-    answers: any[]
+    answers?: any[]
     scheduledAt?: string
-    completedAt: string
+    completedAt?: string
+    status: "pending" | "completed" | "missed" | "sent"
     isDelayed: boolean
     questionnaire?: {
         title: string
         icon: string
-        questions: any[]
     }
 }
 
@@ -737,11 +737,11 @@ export async function getQuestionnaireCompletions(patientId: string): Promise<Qu
             answers: c.answers,
             scheduledAt: c.scheduled_at,
             completedAt: c.completed_at,
+            status: c.status,
             isDelayed: c.is_delayed,
             questionnaire: c.questionnaire ? {
                 title: c.questionnaire.title,
-                icon: c.questionnaire.icon || "FileQuestion",
-                questions: c.questionnaire.questions || []
+                icon: c.questionnaire.icon || "FileQuestion"
             } : undefined
         }));
     } catch (e) {
@@ -793,6 +793,44 @@ export interface ChatMessageSnapshot {
     ai_suggestion_log_id?: number;
     was_edited_by_human?: boolean;
 }
+export async function updateQuestionnaireCompletion(id: string, updates: { scheduledAt?: string, status?: string }): Promise<QuestionnaireCompletion | null> {
+    try {
+        const payload: any = {};
+        if (updates.scheduledAt) payload.scheduled_at = updates.scheduledAt;
+        if (updates.status) payload.status = updates.status;
+
+        const res = await fetchWithAuth(`${API_URL}/assignments/completions/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) return null;
+        const c = await res.json();
+        console.log("updateQuestionnaireCompletion response:", c);
+
+        return {
+            id: c.id?.toString() || "",
+            assignmentId: c.assignment_id?.toString() || "",
+            patientId: c.patient_id?.toString() || "",
+            questionnaireId: c.questionnaire_id?.toString() || "",
+            answers: c.answers,
+            scheduledAt: c.scheduled_at,
+            completedAt: c.completed_at,
+            status: c.status,
+            isDelayed: c.is_delayed,
+            questionnaire: c.questionnaire ? {
+                title: c.questionnaire.title,
+                icon: c.questionnaire.icon || "FileQuestion"
+            } : undefined
+        };
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+// --- Sessions ---
 export interface Session {
     id: string
     patient_id: string
