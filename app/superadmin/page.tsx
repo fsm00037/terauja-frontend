@@ -18,14 +18,15 @@ import {
 import {
     Users,
     Activity,
-    ShieldCheck,
     LogOut,
     UserPlus
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import * as api from "@/lib/api"
 
 export default function SuperAdminPage() {
     const router = useRouter()
+    const { t } = useLanguage()
     const [stats, setStats] = useState<api.PlatformStats | null>(null)
     const [users, setUsers] = useState<api.Psychologist[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -280,7 +281,7 @@ export default function SuperAdminPage() {
                                                 <div className="flex items-center gap-2">
                                                     <div className={`w-2 h-2 rounded-full ${user.totalOnlineSeconds && user.totalOnlineSeconds > 0 ? "bg-green-500" : "bg-gray-300"}`} />
                                                     <span className="text-gray-500">
-                                                        {user.totalOnlineSeconds && user.totalOnlineSeconds > 0 ? "Online" : "Offline"}
+                                                        {user.totalOnlineSeconds && user.totalOnlineSeconds > 0 ? t("online") : t("offline")}
                                                     </span>
                                                 </div>
                                             </td>

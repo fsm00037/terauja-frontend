@@ -15,7 +15,8 @@ interface Message {
   text: string
   sender: "patient" | "therapist"
   timestamp: string
-  riskLevel: "low" | "medium" | "high" | null
+  was_edited_by_human?: boolean;
+  ai_suggestion_log_id?: number | null;
 }
 
 interface ChatTranscriptProps {
@@ -38,6 +39,10 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
   const [sessionDescription, setSessionDescription] = useState("")
   const endRef = useRef<HTMLDivElement>(null)
 
+  const [aiSuggestionLogId, setAiSuggestionLogId] = useState<number | null>(null);
+  const [originalAiText, setOriginalAiText] = useState<string | null>(null);
+  const [isAiUsed, setIsAiUsed] = useState(false);
+
   // Optimize: Only update state if messages have actually changed
   const loadMessages = async () => {
     try {
@@ -46,17 +51,14 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
         id: m.id.toString(),
         text: m.content,
         sender: m.is_from_patient ? "patient" : "therapist",
-        timestamp: new Date(m.created_at).toLocaleString(),
-        riskLevel: null,
+        timestamp: m.created_at,
+        was_edited_by_human: m.was_edited_by_human,
+        ai_suggestion_log_id: m.ai_suggestion_log_id
       }));
-
       setMessages(prev => {
-        // Simple check: if length different or last message ID different
         if (prev.length !== mapped.length) return mapped;
         if (prev.length > 0 && mapped.length > 0 && prev[prev.length - 1].id !== mapped[mapped.length - 1].id) return mapped;
 
-        // Deep compare if needed, but usually length + last ID is enough for chat
-        // To be safe against edits (unlikely here but good practice), we can strict compare
         const isDifferent = JSON.stringify(prev) !== JSON.stringify(mapped);
         return isDifferent ? mapped : prev;
       });
@@ -96,23 +98,46 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
 
     // Check if the last message is from the patient and hasn't been processed yet
     if (lastMessage.sender === "patient" && lastMessage.id !== lastProcessedMessageId.current) {
-      console.log("New patient message detected, fetching suggestions...", lastMessage.id);
       lastProcessedMessageId.current = lastMessage.id;
       handleGetSuggestions();
     }
   }, [messages]);
 
   const sendMessage = async (text: string) => {
-    if (!text.trim()) return
+    if (!text.trim()) return;
 
     try {
-      // Send as Therapist (isFromPatient = false)
-      const newMsg = await api.sendMessage(patientId, text.trim(), false);
+      const wasEdited = isAiUsed && text.trim() !== originalAiText?.trim();
+
+      const payload = {
+        patient_id: patientId,
+        content: text.trim(),
+        is_from_patient: false,
+        ai_suggestion_log_id: isAiUsed ? aiSuggestionLogId : null,
+        was_edited_by_human: wasEdited,
+      };
+
+      const newMsg = await api.sendMessage(payload);
+
       if (newMsg) {
-        setCustomResponse("")
-        setSelectedOption(null)
-        setAiOptions([]) // Clear suggestions on send
-        loadMessages(); // Refresh immediately
+        const fullMsg: Message = {
+          id: newMsg.id.toString(),
+          text: newMsg.content,
+          sender: "therapist",
+          timestamp: newMsg.created_at,
+          was_edited_by_human: newMsg.was_edited_by_human,
+          ai_suggestion_log_id: newMsg.ai_suggestion_log_id
+        };
+
+        setMessages(prev => [...prev, fullMsg]);
+
+        // Reset de estados
+        setCustomResponse("");
+        setSelectedOption(null);
+        setAiOptions([]);
+        setAiSuggestionLogId(null);
+        setOriginalAiText(null);
+        setIsAiUsed(false);
       }
     } catch (error) {
       console.error("Failed to send message", error);
@@ -121,28 +146,50 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
 
   const handleSaveAndClose = () => {
     if (onSaveAndClose) {
-      onSaveAndClose(messages, sessionNotes, sessionDescription)
-      // Reset the chat (optional, or maybe navigate away)
-      setMessages([])
-      setSessionNotes("")
-      setSessionDescription("")
-      setCustomResponse("")
-      setSelectedOption(null)
-      setAiOptions([])
+      const sessionSnapshot = messages.map(msg => ({
+        id: msg.id,
+        text: msg.text,
+        sender: msg.sender,
+        timestamp: msg.timestamp,
+        was_edited_by_human: msg.was_edited_by_human ?? false,
+        ai_suggestion_log_id: msg.ai_suggestion_log_id ?? null
+      }));
+      console.log("Session snapshot:", sessionSnapshot);
+      onSaveAndClose(sessionSnapshot, sessionNotes, sessionDescription);
+
+      // Limpieza de estados
+      setMessages([]);
+      setSessionNotes("");
+      setSessionDescription("");
+      setCustomResponse("");
+      setSelectedOption(null);
+      setAiOptions([]);
     }
   }
 
   const handleGetSuggestions = async () => {
     setLoadingSuggestions(true)
     try {
-      const result = await api.getChatRecommendations(messages)
-      setAiOptions(result)
+      // Pasamos el patientId (asegúrate de que sea número)
+      const result = await api.getChatRecommendations(messages, Number(patientId));
+
+      if (result) {
+        setAiOptions(result.recommendations);
+        setAiSuggestionLogId(result.ai_suggestion_log_id); // Guardamos el ID para el log posterior
+      }
     } catch (e) {
       console.error(e)
     } finally {
       setLoadingSuggestions(false)
     }
   }
+
+  const handleSelectOption = (index: number) => {
+    setSelectedOption(index);
+    setCustomResponse(aiOptions[index]);
+    setOriginalAiText(aiOptions[index]);
+    setIsAiUsed(true);
+  };
 
   const filteredMessages = messages.filter((msg) => msg.text.toLowerCase().includes(searchTerm.toLowerCase()))
 
@@ -159,7 +206,7 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
                   : "bg-gray-50 text-gray-600 border-gray-200"
                   }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
-                  {isOnline ? "Online" : "Offline"}
+                  {isOnline ? t("online") : t("offline")}
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -206,7 +253,15 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
                           <p className="font-medium text-neutral-charcoal">
                             {message.sender === "patient" ? t("patient") : t("therapist")}
                           </p>
-                          <p className="text-xs text-muted-foreground">{message.timestamp}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(message.timestamp + "Z").toLocaleString("es-ES", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
                         </div>
                       </div>
                       <p className="text-sm text-neutral-charcoal leading-relaxed">{message.text}</p>
@@ -241,16 +296,13 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
                   {aiOptions.map((option, idx) => (
                     <button
                       key={idx}
-                      onClick={() => {
-                        setSelectedOption(idx)
-                        setCustomResponse(option)
-                      }}
+                      onClick={() => handleSelectOption(idx)} // <--- CAMBIA ESTO (antes tenías lógica manual aquí)
                       className={`w-full text-left p-4 rounded-xl border transition-all ${selectedOption === idx
                         ? "border-soft-lavender bg-soft-lavender text-neutral-charcoal font-medium shadow-sm"
                         : "border-soft-gray hover:border-soft-lavender/50 hover:bg-muted/30"
                         }`}
                     >
-                      <p className={`text-sm leading-relaxed ${selectedOption === idx ? "text-neutral-charcoal" : "text-neutral-charcoal"}`}>{option}</p>
+                      <p className="text-sm leading-relaxed text-neutral-charcoal">{option}</p>
                     </button>
                   ))}
                 </div>

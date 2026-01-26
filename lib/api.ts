@@ -74,7 +74,6 @@ interface BackendPatient {
     id: number;
     patient_code: string;
     access_code: string;
-    email?: string;
     psychologist_id?: number;
     psychologist_name?: string;
     psychologist_schedule?: string;
@@ -114,11 +113,9 @@ export interface Patient {
     name: string; // Will display patient_code
     patientCode: string; // Mapped from access_code
     access_code: string; // Kept for reference
-    email?: string;
     psychologistId?: string;
     psychologistName?: string;
     psychologistSchedule?: string;
-    riskLevel: "low" | "medium" | "high";
     unreadMessages: number;
     uncheckedQuestionnaires: number;
     lastContact: string;
@@ -146,11 +143,9 @@ export async function getPatients(psychologistId?: string): Promise<Patient[]> {
             name: p.patient_code, // Main identifier now
             patientCode: p.patient_code, // Redundant but consistent
             access_code: p.access_code,
-            email: p.email,
             psychologistId: p.psychologist_id?.toString(),
             psychologistName: p.psychologist_name,
             psychologistSchedule: p.psychologist_schedule,
-            riskLevel: "low", // Default
             unreadMessages: p.unread_messages || 0,
             uncheckedQuestionnaires: 0, // Default
             lastContact: new Date(p.created_at).toISOString().split('T')[0],
@@ -167,13 +162,12 @@ export async function getPatients(psychologistId?: string): Promise<Patient[]> {
     }
 }
 
-export async function createPatient(patientCode: string, psychologistId?: string, email?: string): Promise<Patient | null> {
+export async function createPatient(patientCode: string, psychologistId?: string): Promise<Patient | null> {
     try {
         const res = await fetchWithAuth(`${API_URL}/patients`, {
             method: 'POST',
             body: JSON.stringify({
                 patient_code: patientCode,
-                email: email,
                 psychologist_id: psychologistId ? parseInt(psychologistId) : undefined
             }),
         });
@@ -192,10 +186,8 @@ export async function createPatient(patientCode: string, psychologistId?: string
             name: p.patient_code,
             patientCode: p.patient_code,
             access_code: p.access_code,
-            email: p.email,
             psychologistName: p.psychologist_name,
             psychologistSchedule: p.psychologist_schedule,
-            riskLevel: "low",
             unreadMessages: 0,
             uncheckedQuestionnaires: 0,
             lastContact: new Date(p.created_at).toISOString().split('T')[0],
@@ -271,13 +263,14 @@ export async function deleteNote(noteId: string): Promise<boolean> {
 }
 
 // --- Chat Messages ---
-
 export interface ChatMessage {
     id: number
     patient_id: number
     content: string
     is_from_patient: boolean
     created_at: string
+    was_edited_by_human: boolean
+    ai_suggestion_log_id: number
 }
 
 export async function getMessages(patientId: string): Promise<ChatMessage[]> {
@@ -291,18 +284,20 @@ export async function getMessages(patientId: string): Promise<ChatMessage[]> {
     }
 }
 
-export async function sendMessage(patientId: string, content: string, isFromPatient: boolean = false): Promise<ChatMessage | null> {
-    try {
-        const res = await fetchWithAuth(`${API_URL}/messages`, {
-            method: 'POST',
-            body: JSON.stringify({ patient_id: parseInt(patientId), content, is_from_patient: isFromPatient }),
-        });
-        if (!res.ok) return null;
-        return await res.json();
-    } catch (e) {
-        console.error(e);
-        return null;
-    }
+export async function sendMessage(payload: {
+    patient_id: number | string,
+    content: string,
+    is_from_patient: boolean,
+    ai_suggestion_log_id?: number | null,
+    was_edited_by_human?: boolean,
+}) {
+    const res = await fetchWithAuth(`${API_URL}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Error sending message");
+    return await res.json();
 }
 
 export async function markMessagesAsRead(patientId: string): Promise<boolean> {
@@ -329,7 +324,12 @@ export async function clearChat(patientId: string): Promise<boolean> {
     }
 }
 
-export async function getChatRecommendations(messages: any[]): Promise<string[]> {
+export interface AiRecommendationsResponse {
+    recommendations: string[];
+    ai_suggestion_log_id: number;
+}
+
+export async function getChatRecommendations(messages: any[], patientId: number): Promise<AiRecommendationsResponse | null> {
     try {
         const payload = messages.map(m => ({
             role: m.sender === "therapist" ? "assistant" : "user",
@@ -338,15 +338,25 @@ export async function getChatRecommendations(messages: any[]): Promise<string[]>
 
         const res = await fetchWithAuth(`${API_URL}/chat/recommendations`, {
             method: 'POST',
-            body: JSON.stringify({ messages: payload }),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                messages: payload,
+                patient_id: patientId
+            }),
         });
 
-        if (!res.ok) return [];
+        if (!res.ok) {
+            console.error("Error en la respuesta de recomendaciones:", await res.text());
+            return null;
+        }
+
         const data = await res.json();
-        return data.recommendations || [];
+        return data;
     } catch (e) {
-        console.error(e);
-        return [];
+        console.error("Error en getChatRecommendations:", e);
+        return null;
     }
 }
 
@@ -546,6 +556,7 @@ export interface Assignment {
     status: "active" | "paused" | "completed"
     answers?: any[] // Answers when completed
     assignedAt?: string
+    nextScheduledAt?: string
     questionnaire?: {
         id: number
         title: string
@@ -572,6 +583,8 @@ export async function getAssignments(): Promise<Assignment[]> {
             deadlineHours: a.deadline_hours,
             minHoursBetween: a.min_hours_between,
             status: a.status,
+            assignmentType: a.assignment_type,
+            sentAt: a.sent_at,
             questionnaire: a.questionnaire ? {
                 id: a.questionnaire.id.toString(),
                 title: a.questionnaire.title,
@@ -598,6 +611,7 @@ export async function createAssignment(assignment: Omit<Assignment, "id">): Prom
             window_end: assignment.windowEnd,
             deadline_hours: assignment.deadlineHours,
             min_hours_between: assignment.minHoursBetween,
+            next_scheduled_at: assignment.nextScheduledAt,
             status: "active"
         };
 
@@ -639,6 +653,47 @@ export async function updateAssignmentStatus(id: string, status: "active" | "pau
     } catch (e) {
         console.error(e);
         return false;
+    }
+}
+
+export async function patientLogin(patientCode: string, accessCode: string): Promise<Patient | null> {
+    try {
+        const res = await fetch(`${API_URL}/auth`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ patient_code: patientCode, access_code: accessCode }),
+        });
+
+        if (!res.ok) return null;
+        const data = await res.json();
+
+        if (data.access_token) {
+            setToken(data.access_token);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('isAuthenticated', 'true');
+                localStorage.setItem('userRole', 'patient');
+                localStorage.setItem('userId', data.id.toString());
+            }
+        }
+
+        return {
+            id: data.id.toString(),
+            name: data.patient_code,
+            patientCode: data.patient_code,
+            access_code: data.access_code,
+            psychologistId: data.psychologist_id?.toString(),
+            psychologistName: data.psychologist_name,
+            psychologistSchedule: data.psychologist_schedule,
+            unreadMessages: 0,
+            uncheckedQuestionnaires: 0,
+            lastContact: new Date().toISOString().split('T')[0],
+            status: "active",
+            isOnline: true,
+            created_at: new Date().toISOString()
+        };
+    } catch (e) {
+        console.error("Patient login error:", e);
+        return null;
     }
 }
 
@@ -727,6 +782,16 @@ export async function getPatientAssignments(patientId: string): Promise<Assignme
     }
 }
 
+// --- Sessions ---
+export interface ChatMessageSnapshot {
+    id?: string;
+    text: string;
+    sender: "patient" | "therapist";
+    timestamp: string;
+    // Datos de IA (solo presentes si el sender es therapist y usó IA)
+    ai_suggestion_log_id?: number;
+    was_edited_by_human?: boolean;
+}
 export async function updateQuestionnaireCompletion(id: string, updates: { scheduledAt?: string, status?: string }): Promise<QuestionnaireCompletion | null> {
     try {
         const payload: any = {};
@@ -772,7 +837,7 @@ export interface Session {
     duration: string
     description: string
     notes: string
-    chatHistory: any[]
+    chatHistory: ChatMessageSnapshot[];
 }
 
 export async function getSessions(patientId: string): Promise<Session[]> {
@@ -832,12 +897,21 @@ export async function createSession(session: Omit<Session, "id" | "date"> & { da
 
 export async function updateSession(sessionId: string, session: Partial<Omit<Session, "id" | "patient_id">>): Promise<Session | null> {
     try {
+        const payload = {
+            ...session,
+            chat_snapshot: session.chatHistory
+        };
+        delete (payload as any).chatHistory;
+
         const res = await fetchWithAuth(`${API_URL}/sessions/${sessionId}`, {
             method: 'PUT',
-            body: JSON.stringify(session)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
+
         if (!res.ok) return null;
         const s = await res.json();
+
         return {
             id: s.id.toString(),
             patient_id: s.patient_id.toString(),
@@ -848,7 +922,7 @@ export async function updateSession(sessionId: string, session: Partial<Omit<Ses
             chatHistory: s.chat_snapshot || []
         };
     } catch (e) {
-        console.error(e);
+        console.error("Error updating session:", e);
         return null;
     }
 }

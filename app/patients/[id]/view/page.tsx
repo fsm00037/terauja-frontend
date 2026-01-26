@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Send, Clock, Lock, LogOut } from "lucide-react"
+import { Send, Clock, Lock, LogOut, Loader2 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
-import { INITIAL_PATIENTS } from "@/lib/mock-data"
+import * as api from "@/lib/api"
 
 interface Message {
   id: string
@@ -25,6 +25,7 @@ export default function PatientViewPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [accessCode, setAccessCode] = useState("")
   const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -38,15 +39,25 @@ export default function PatientViewPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { t } = useLanguage()
 
-  const handleVerifyCode = (e: React.FormEvent) => {
+  const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault()
-    const patient = INITIAL_PATIENTS.find((p) => p.id === patientId)
+    if (!accessCode) return
 
-    if (patient && patient.patientCode === accessCode.toUpperCase()) {
-      setIsAuthenticated(true)
-      setError("")
-    } else {
-      setError(t("invalidCode"))
+    setIsLoading(true)
+    setError("")
+
+    try {
+      const patient = await api.patientLogin(patientId, accessCode.toUpperCase())
+
+      if (patient) {
+        setIsAuthenticated(true)
+      } else {
+        setError(t("invalidCode"))
+      }
+    } catch (err) {
+      setError(t("errorOccurred"))
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -109,8 +120,12 @@ export default function PatientViewPage() {
                 />
                 {error && <p className="text-sm text-soft-coral text-center font-medium">{error}</p>}
               </div>
-              <Button type="submit" className="w-full h-12 rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white font-medium text-lg shadow-md">
-                {t("startChat")}
+              <Button type="submit" disabled={isLoading} className="w-full h-12 rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white font-medium text-lg shadow-md">
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  t("startChat")
+                )}
               </Button>
             </form>
           </CardContent>

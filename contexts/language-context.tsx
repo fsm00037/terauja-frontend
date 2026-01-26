@@ -38,6 +38,8 @@ const translations = {
     dashboard: "Dashboard",
     patients: "Patients",
     profile: "Profile",
+    offline: "Offline",
+    online: "Online",
 
     // Dashboard
     totalPatients: "Total Patients",
@@ -300,7 +302,7 @@ const translations = {
     patientManagement: "Gestión de Usuarios",
     searchPatients: "Buscar usuarios...",
     addPatient: "Agregar Usuario",
-    createNewPatient: "Añadir Nuevo Usuario",
+    createNewPatient: "Añadir Usuario",
     editPatient: "Editar Usuario",
     fullName: "Nombre Completo",
     age: "Edad",
@@ -364,6 +366,8 @@ const translations = {
     available: "Disponible",
     unavailable: "No Disponible",
     profileUpdated: "Perfil actualizado exitosamente!",
+    offline: "Desconectado",
+    online: "Conectado",
 
     // Patient View
     yourTherapist: "Tu Terapeuta",
@@ -427,7 +431,7 @@ const translations = {
     patientManagementDesc: "Gestiona y supervisa a tus pacientes",
     searchByIdOrName: "Buscar por ID o nombre del usuario...",
     unreadMessagesCount: "Mensajes Sin Leer",
-    lastContact: "Último Contacto",
+    lastContact: "Última Conexión",
     actions: "Acciones",
     confirmDeletePatient: "¿Estás seguro de que quieres eliminar este usuario?",
     welcomeBackName: "Bienvenido de nuevo, Dr. Smith",
@@ -527,13 +531,6 @@ const translations = {
     deleteAssignment: "Eliminar Asignación",
     noAssignments: "No se encontraron asignaciones activas.",
     assignQuestionnaire: "Asignar Cuestionario",
-    details: "Detalles",
-    progress: "Progreso",
-    scheduled: "Programado",
-    unknownPatient: "Usuario Desconocido",
-    pending: "Pendiente",
-    missed: "Perdido",
-    sent: "Enviado",
   },
 }
 

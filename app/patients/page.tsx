@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Search, Plus, Edit, Trash2, Eye, Copy } from "lucide-react"
 import { CreatePatientModal } from "@/components/create-patient-modal"
-import { EditPatientModal } from "@/components/edit-patient-modal"
 import { useLanguage } from "@/contexts/language-context"
 
 import { type Patient } from "@/lib/api"
@@ -20,11 +19,7 @@ export default function PatientsPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [patients, setPatients] = useState<Patient[]>([])
-
-
 
   const loadPatients = async () => {
     const role = localStorage.getItem("userRole")
@@ -52,15 +47,6 @@ export default function PatientsPage() {
     if (confirm(t("confirmDeletePatient"))) {
       setPatients(patients.filter((p) => p.id !== id))
     }
-  }
-
-  const handleEdit = (patient: Patient) => {
-    setSelectedPatient(patient)
-    setIsEditModalOpen(true)
-  }
-
-  const handleUpdatePatient = (updatedPatient: Patient) => {
-    setPatients(patients.map((p) => (p.id === updatedPatient.id ? updatedPatient : p)))
   }
 
   const handleCreatePatient = (newPatient: Patient) => {
@@ -165,7 +151,11 @@ export default function PatientsPage() {
                       <td className="py-4 px-4 text-sm text-neutral-charcoal">
                         {patient.psychologistName || "Sin Asignar"}
                       </td>
-                      <td className="py-4 px-4 text-muted-foreground">{patient.lastContact}</td>
+                      <td className="py-4 px-4 text-muted-foreground">{new Date(patient.lastContact + "Z").toLocaleString("es-ES", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}</td>
                       <td className="py-4 px-4">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${patient.isOnline
@@ -174,7 +164,7 @@ export default function PatientsPage() {
                             }`}
                         >
                           <span className={`w-1.5 h-1.5 rounded-full ${patient.isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
-                          {patient.isOnline ? "Online" : "Offline"}
+                          {patient.isOnline ? t("online") : t("offline")}
                         </span>
                       </td>
                       <td className="py-4 px-4">
@@ -186,14 +176,6 @@ export default function PatientsPage() {
                             className="h-9 w-9 p-0 rounded-lg hover:bg-calm-teal/10 hover:text-calm-teal"
                           >
                             <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(patient)}
-                            className="h-9 w-9 p-0 rounded-lg hover:bg-soft-peach/10 hover:text-soft-peach"
-                          >
-                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -220,14 +202,7 @@ export default function PatientsPage() {
         onCreatePatient={handleCreatePatient}
       />
 
-      {selectedPatient && (
-        <EditPatientModal
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-          patient={selectedPatient}
-          onUpdatePatient={handleUpdatePatient}
-        />
-      )}
+
     </DashboardLayout>
   )
 }

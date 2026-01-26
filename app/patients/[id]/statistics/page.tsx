@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, ChangeEvent } from "react"
+import { useState, useEffect, useMemo, useCallback, ChangeEvent } from "react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
@@ -9,15 +9,42 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { ArrowLeft, Copy, CheckCircle2, Calendar, FileText, Plus, Trash2, Edit, Save, X, Bold, Italic, BarChart2, MessageSquare, ChevronUp, ChevronDown, ClipboardList, Clock, Activity, Heart, Brain, Smile, Zap, Moon, Sun, Flame, Star, FileQuestion } from "lucide-react"
+import {
+  ArrowLeft,
+  Copy,
+  CheckCircle2,
+  Calendar,
+  FileText,
+  Plus,
+  Trash2,
+  Edit,
+  Save,
+  X,
+  Bold,
+  Italic,
+  BarChart2,
+  MessageSquare,
+  ChevronUp,
+  ChevronDown,
+  ClipboardList,
+  Clock,
+  Activity,
+  Heart,
+  Brain,
+  Smile,
+  Zap,
+  Moon,
+  Sun,
+  Flame,
+  Star,
+  FileQuestion,
+} from "lucide-react"
 import { ChatTranscript } from "@/components/chat-transcript"
 import { useLanguage } from "@/contexts/language-context"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import * as api from "@/lib/api"
 import type { AssessmentStat as ApiAssessmentStat } from "@/lib/api"
 import { useToast } from "@/components/ui/use-toast"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
 
 const NOTE_COLORS = [
   { value: "bg-white", label: "White" },
@@ -121,7 +148,7 @@ export default function PatientStatisticsPage() {
       setExpandedQuestionnaireId(id)
     }
   }
-  //prueba
+  
   // --- Assessment Stats State ---
   type AssessmentStat = Omit<ApiAssessmentStat, "patient_id" | "created_at" | "updated_at">
 
@@ -267,47 +294,66 @@ export default function PatientStatisticsPage() {
   const [statsSessionId, setStatsSessionId] = useState<string | null>(null)
   const [showGeneralStats, setShowGeneralStats] = useState(false)
 
-
-
-
   const calculateStats = (session: Session) => {
     const patientMsgs = session.chatHistory.filter(m => m.sender === "patient")
     const therapistMsgs = session.chatHistory.filter(m => m.sender === "therapist")
 
-    const patientWords = patientMsgs.reduce((acc, curr) => acc + curr.text.split(" ").length, 0)
-    const therapistWords = therapistMsgs.reduce((acc, curr) => acc + curr.text.split(" ").length, 0)
+    const patientWords = patientMsgs.reduce((acc, curr) => acc + (curr.text?.split(/\s+/).length || 0), 0)
+    const therapistWords = therapistMsgs.reduce((acc, curr) => acc + (curr.text?.split(/\s+/).length || 0), 0)
     const totalWords = patientWords + therapistWords
+
+    // Función auxiliar para parsear el formato "DD/MM/YYYY, HH:MM:SS"
+    const parseTimestamp = (ts: string) => {
+      try {
+        if (!ts.includes(',')) return new Date(ts).getTime(); // ISO fallback
+        const [datePart, timePart] = ts.split(', ');
+        const [day, month, year] = datePart.split('/').map(Number);
+        const [hours, minutes, seconds] = timePart.split(':').map(Number);
+        return new Date(year, month - 1, day, hours, minutes, seconds).getTime();
+      } catch (e) {
+        return NaN;
+      }
+    };
 
     let duration = 0
     if (session.chatHistory.length > 1) {
-      const start = new Date(session.chatHistory[0].timestamp).getTime()
-      const end = new Date(session.chatHistory[session.chatHistory.length - 1].timestamp).getTime()
+      const start = parseTimestamp(session.chatHistory[0].timestamp)
+      const end = parseTimestamp(session.chatHistory[session.chatHistory.length - 1].timestamp)
       if (!isNaN(start) && !isNaN(end)) {
         duration = Math.round((end - start) / (1000 * 60))
       }
     }
 
-    // Calculate Average Patient Response Time
-    let totalResponseTime = 0
+    // --- Cálculo del Tiempo de Respuesta Promedio ---
+    let totalResponseTimeMs = 0
     let responseCount = 0
 
     for (let i = 1; i < session.chatHistory.length; i++) {
       const current = session.chatHistory[i]
       const previous = session.chatHistory[i - 1]
 
+      // Solo calculamos si el paciente responde a un mensaje previo del terapeuta
       if (current.sender === "patient" && previous.sender === "therapist") {
-        const currTime = new Date(current.timestamp).getTime()
-        const prevTime = new Date(previous.timestamp).getTime()
+        const currTime = parseTimestamp(current.timestamp)
+        const prevTime = parseTimestamp(previous.timestamp)
 
         if (!isNaN(currTime) && !isNaN(prevTime)) {
-          totalResponseTime += (currTime - prevTime)
-          responseCount++
+          const diff = currTime - prevTime
+
+          // Filtro de seguridad: Si la respuesta tarda más de 2 horas, 
+          // probablemente no es una respuesta directa en la conversación activa.
+          if (diff > 0 && diff < 1000 * 60 * 120) {
+            totalResponseTimeMs += diff
+            responseCount++
+          }
         }
       }
     }
 
-    // Default to 0 if no responses found
-    const avgResponseSeconds = responseCount > 0 ? Math.round((totalResponseTime / responseCount) / 1000) : 0
+    // Convertimos a segundos para una lectura más fácil en las gráficas
+    const avgResponseSeconds = responseCount > 0
+      ? Math.round((totalResponseTimeMs / responseCount) / 1000)
+      : 0
 
     return {
       patientCount: patientMsgs.length,
@@ -315,7 +361,7 @@ export default function PatientStatisticsPage() {
       patientWords,
       therapistWords,
       totalWords,
-      duration: duration || parseInt(session.duration),
+      duration: duration || parseInt(session.duration) || 0,
       avgResponseSeconds
     }
   }
@@ -394,20 +440,46 @@ export default function PatientStatisticsPage() {
 
   // --- Session Handlers ---
   const handleSaveAndCloseChat = async (messages: any[], notes: string, description: string) => {
+
     try {
+      const parseDate = (dateStr?: string) => {
+        if (!dateStr) return null;
+
+        const time = new Date(dateStr).getTime();
+        return isNaN(time) ? null : time;
+      };
+
       const chatSnapshot = messages.map(m => ({
         text: m.text,
         sender: m.sender,
-        timestamp: m.timestamp // already formatted string
+        timestamp: m.timestamp,
+        was_edited_by_human: m.was_edited_by_human ?? false,
+        ai_suggestion_log_id: m.ai_suggestion_log_id ?? null
       }));
 
+      let durationStr = "1 min";
+      console.log("TIMESTAMPS:", chatSnapshot.map(m => m.timestamp))
+
+      if (chatSnapshot.length >= 2) {
+        const firstMsgTime = parseDate(chatSnapshot[0].timestamp);
+        const lastMsgTime = parseDate(chatSnapshot[chatSnapshot.length - 1].timestamp);
+
+        if (firstMsgTime && lastMsgTime) {
+          const diffInMs = lastMsgTime - firstMsgTime;
+          // Usamos Math.floor para minutos completos o Math.round para el más cercano
+          const diffInMinutes = Math.floor(diffInMs / 60000);
+
+          // Si la diferencia es de 3 minutos como en tu ejemplo, pondrá 3.
+          durationStr = `${diffInMinutes > 0 ? diffInMinutes : 1} min`;
+        }
+      }
+      console.log("Duracion------------------------------" + String(durationStr))
       const payload = {
         patient_id: patientId,
-        // date: omitted to let backend use default (now)
-        duration: "30 min",
+        duration: durationStr,
         description: description || "Sesión de Chat",
         notes: notes || "Sin notas adicionales",
-        chatHistory: chatSnapshot
+        chatHistory: chatSnapshot // Tu api.ts lo convertirá a chat_snapshot
       };
 
       const newSession = await api.createSession(payload)
@@ -652,7 +724,6 @@ export default function PatientStatisticsPage() {
         </Card>
 
         {activeTab === "assessment" && (
-
           <Card className="rounded-2xl border-soft-gray shadow-soft">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-neutral-charcoal">{t("assessmentResults")}</CardTitle>
@@ -920,7 +991,13 @@ export default function PatientStatisticsPage() {
                         </div>
                         <div>
                           <p className="font-semibold text-neutral-charcoal">{session.description}</p>
-                          <p className="text-sm text-muted-foreground">{new Date(session.date).toLocaleDateString()} {new Date(session.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                          <p className="text-sm text-muted-foreground">{new Date(session.date + "Z").toLocaleTimeString("es-ES", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })}</p>
                         </div>
                       </div>
                       <div className="flex gap-1">
@@ -1023,8 +1100,8 @@ export default function PatientStatisticsPage() {
                           </div>
                           <span className="text-xl font-semibold text-neutral-charcoal">
                             {Math.floor(stats.duration / 60) > 0
-                              ? `${Math.floor(stats.duration / 60)} ${t("hours")} ${stats.duration % 60} ${t("minutes")}`
-                              : `${stats.duration} ${t("minutes")}`
+                              ? `${Math.floor(stats.duration / 60)} ${t("hours")} ${stats.duration % 60} ${t("minutes")} `
+                              : `${stats.duration} ${t("minutes")} `
                             }
                           </span>
                         </div>
@@ -1043,7 +1120,14 @@ export default function PatientStatisticsPage() {
               <CardHeader className="border-b border-soft-gray bg-white z-10 shrink-0">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-neutral-charcoal">
-                    {t("sessionChat")} - {chatDescription || "Sin descripción"} ({sessions.find((s) => s.id === viewingSessionId)?.date})
+                    {t("sessionChat")} - {chatDescription || "Sin descripción"} ({(() => {
+                      const session = sessions.find((s) => s.id === viewingSessionId);
+                      return session?.date ? new Date(session.date).toLocaleDateString("es-ES", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      }) : "";
+                    })()})
                   </CardTitle>
                   <Button variant="ghost" onClick={() => setViewingSessionId(null)} className="rounded-xl">
                     {t("close")}
@@ -1100,7 +1184,13 @@ export default function PatientStatisticsPage() {
                                 <p className="font-medium text-neutral-charcoal">
                                   {message.sender === "patient" ? "Patient" : "Therapist"}
                                 </p>
-                                <p className="text-xs text-muted-foreground">{message.timestamp}</p>
+                                <p className="text-xs text-muted-foreground">{new Date(message.timestamp + "Z").toLocaleTimeString("es-ES", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                })}</p>
                               </div>
                             </div>
                             <p className="text-sm text-neutral-charcoal leading-relaxed session-message-text transition-colors">
