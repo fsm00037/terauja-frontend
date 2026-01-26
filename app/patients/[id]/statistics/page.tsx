@@ -10,9 +10,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   ArrowLeft,
-  Copy,
-  CheckCircle2,
   Calendar,
   FileText,
   Plus,
@@ -148,7 +153,7 @@ export default function PatientStatisticsPage() {
       setExpandedQuestionnaireId(id)
     }
   }
-  
+
   // --- Assessment Stats State ---
   type AssessmentStat = Omit<ApiAssessmentStat, "patient_id" | "created_at" | "updated_at">
 
