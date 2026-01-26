@@ -1,0 +1,571 @@
+"use client"
+
+import type React from "react"
+import { createContext, useContext, useState, useEffect } from "react"
+
+type Language = "en" | "es"
+
+interface LanguageContextType {
+  language: Language
+  setLanguage: (lang: Language) => void
+  t: (key: string, params?: Record<string, string | number>) => string
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
+
+const translations = {
+  en: {
+    // Common
+    save: "Save",
+    cancel: "Cancel",
+    delete: "Delete",
+    edit: "Edit",
+    search: "Search",
+    close: "Close",
+    back: "Back",
+    view: "View",
+    add: "Add",
+
+    // Auth
+    login: "Login",
+    logout: "Logout",
+    email: "Email",
+    password: "Password",
+    welcomeBack: "Welcome back, {name}",
+    loginSubtitle: "Login to access your supervision dashboard",
+
+    // Navigation
+    dashboard: "Dashboard",
+    patients: "Patients",
+    profile: "Profile",
+    offline: "Offline",
+    online: "Online",
+
+    // Dashboard
+    totalPatients: "Total Patients",
+    unreadMessages: "Unread Messages",
+    riskAlerts: "Risk Alerts",
+    recentActivity: "Recent Activity",
+
+    // Patients
+    patientManagement: "Patient Management",
+    searchPatients: "Search patients...",
+    addPatient: "Add Patient",
+    createNewPatient: "Create New Patient",
+    editPatient: "Edit Patient",
+    fullName: "Full Name",
+    age: "Age",
+    contactEmail: "Contact Email",
+    assignedTherapist: "Assigned Therapist",
+    status: "Status",
+    active: "Active",
+    inactive: "Inactive",
+    riskLevel: "Risk Level",
+    low: "Low",
+    medium: "Medium",
+    high: "High",
+    risk: "Risk",
+    lastSession: "Last Session",
+    viewDetails: "View Details",
+    deletePatient: "Delete Patient",
+    confirmDelete: "Are you sure you want to delete this patient?",
+    importAssessmentDesc: "Import Assessment",
+    statusDescription: "Status reflects whether the patient is currently connected to chat",
+    psychologicalAssessment: "Psychological Assessment Results",
+    sessionHistory: "Session History",
+    chatView: "Chat",
+    notes: "Notes",
+    onlineSessions: "Online Sessions",
+    totalSessions: "Total Sessions",
+    viewChat: "View Chat",
+    addNote: "Add Note",
+    previousNotes: "Previous Notes",
+    noteTitle: "Note Title",
+    noteContent: "Note Content",
+    searchMessages: "Search messages...",
+    saveAndCloseChat: "Save & Close",
+    customResponse: "Custom Response",
+    typeMessage: "Type your message...",
+    patientNotes: "Patient Notes",
+    addNewNote: "Add New Note",
+
+    // Chat
+    currentChatSession: "Current Chat Session",
+    sessionNotes: "Session Notes",
+    enterNotes: "Enter detailed session notes...",
+    enterNotesNotes: "These notes will be saved with the session when you click \"Save & Close Chat\"",
+    aiSuggestions: "AI Suggested Responses",
+    sendMessage: "Send Message",
+    saveCloseChat: "Save & Close Chat",
+    sessionDescription: "Session Description",
+    enterDescription: "Enter a brief session description...",
+    searchConversation: "Search conversation...",
+    sessionChat: "Session Chat",
+    enterSummaryDescription: "Enter a brief session description...",
+    enterSummaryNotes: "This will be shown in the session history",
+
+    // Profile
+    profileSettings: "Profile Settings",
+    availability: "Availability",
+    available: "Available",
+    unavailable: "Unavailable",
+    profileUpdated: "Profile updated successfully!",
+
+    // Patient View
+    yourTherapist: "Your Therapist",
+    therapistAvailable: "Currently Available",
+    therapistUnavailable: "Currently Unavailable",
+    contactSupport: "For support or inquiries, contact us at",
+    confidentialSpace: "This is a secure and confidential space. Your therapist will review your messages.",
+    typeYourMessage: "Type your message...",
+    saveNotes: "Save Notes",
+
+    // Session View
+    sessionDetails: "Session Details",
+    duration: "Duration",
+    minutes: "minutes",
+
+    // Assessment view
+    assessmentSummary: "Assessment Summary",
+    importAssessmentFormat: "Import results of psychological test (CSV)",
+    addResult: "Add Result",
+    editResult: "Edit Result",
+    scaleName: "Scale Name",
+    scoreResult: "Score/Result",
+
+    // Messages
+    you: "You",
+    patient: "Patient",
+    therapist: "Therapist",
+
+    // Additional translations
+    patientId: "Patient ID",
+    patientCode: "Patient Code",
+    enterAccessCode: "Enter your access code",
+    accessCode: "Access Code",
+    accessRequired: "Access Required",
+    startChat: "Start Chat",
+    invalidCode: "Invalid access code. Please try again.",
+    assessmentResults: "Assessment Results",
+    sessions: "Sessions",
+    chat: "Chat",
+    viewGeneralStats: "See General Statistics",
+    hideGeneralStats: "Hide General Statistics",
+    statisticsOverTime: "Statistics Over Time",
+    patientMessagesChart: "Patient Messages",
+    avgResponseTimeChart: "Avg. Response Time",
+    enterNewNote: "Enter new note...",
+    updateNote: "Update Note",
+    cancelEdit: "Cancel Edit",
+    viewChatTranscript: "View Chat",
+    chatSession: "Chat Session",
+    searchInSession: "Search in this session...",
+    saveChanges: "Save Changes",
+    personalInformation: "Personal Information",
+    profilePhoto: "Profile Photo",
+    clickToUpdate: "Click the camera icon to update",
+    manageInfo: "Manage your personal information",
+    createPatient: "Create Patient",
+    patientManagementDesc: "Manage and monitor your patients",
+    searchByIdOrName: "Search by patient ID or name...",
+    unreadMessagesCount: "Unread Messages",
+    lastContact: "Last Contact",
+    actions: "Actions",
+    confirmDeletePatient: "Are you sure you want to delete this patient?",
+    welcomeBackName: "Welcome back, Dr. Smith",
+    overviewToday: "Here's an overview of your practice today",
+    activeConversations: "active conversations",
+    highPriority: "high priority",
+    patientsNeedAttention: "Patients requiring attention",
+    newMessageReceived: "New message received",
+    completedAssessment: "Completed Questionnaire",
+    activePeriod: "Active Period",
+    highRiskAlert: "High risk alert",
+    ago: "ago",
+    hour: "hour",
+    hours: "hours",
+    psychologicalSupervision: "Psychological Supervision System",
+    defaultCredentials: "Default credentials: admin@therabot.com / admin",
+    enterPassword: "Enter your password",
+    clinicalSummary: "Clinical Summary",
+    chatSessionType: "Chat Session",
+    totalSessionsCount: "total sessions",
+    sessionNotesTitle: "Session Notes",
+    noNotesForSession: "No notes for this session.",
+    patientNotesDescription: "Document observations, treatment progress, and important information about this patient.",
+    viewPatientInfo: "View patient information and chat history",
+    viewStatistics: "View Statistics",
+    sessionStatistics: "Session Statistics",
+    patientMessages: "Patient Messages",
+    therapistMessages: "Therapist Messages",
+    totalWords: "Total Messages",
+    sessionDuration: "Session Duration",
+    avgResponseTime: "Avg. Response Time",
+    mild: "Mild",
+    severe: "Severe",
+    moderate: "Moderate",
+
+    // Settings
+    settings: "Settings",
+    aiConfig: "AI Configuration",
+    therapistStyle: "Therapist Style",
+    tone: "Tone",
+    additionalInstructions: "Additional Instructions",
+    saveConfig: "Save Configuration",
+    aiConfigDesc: "Configure the behavior and personality of the AI therapist assistant.",
+    stylePlaceholder: "e.g., CBT, Psychoanalysis, Person-Centered...",
+    tonePlaceholder: "e.g., Empathetic, Direct, Professional...",
+    instructionsPlaceholder: "Any specific guidelines for the AI to follow...",
+
+    // Questionnaires
+    questionnaire: "Questionnaire",
+    manageQuestionnaires: "Manage ecological momentary assessments and patient assignments",
+    questionnaires: "Questionnaires",
+    createQuestionnaire: "Create Questionnaire",
+    selectIcon: "Select Icon",
+    questionnaireTitle: "Questionnaire Title",
+    addQuestion: "Add Question",
+    questionType: "Question Type",
+    questionText: "Question Text",
+    likert: "Likert Scale",
+    frequency: "Frequency",
+    openText: "Open Text",
+    saveQuestionnaire: "Save Questionnaire",
+    deleteQuestionnaire: "Delete Questionnaire",
+    minLabel: "Min Label (e.g., Strongly Disagree)",
+    maxLabel: "Max Label (e.g., Strongly Agree)",
+    scaleSize: "Scale Size (e.g., 5)",
+    noQuestionnaires: "No questionnaires found. Create one to get started.",
+    preview: "Preview",
+    previewQuestionnaire: "Preview Questionnaire",
+    closePreview: "Close Preview",
+    date: "Date",
+    answers: "Answers",
+    hideDetails: "Hide Details",
+    noQuestionnairesHistory: "No completed questionnaires found.",
+    questions: "Questions",
+
+    // Assignments
+    selectQuestionnaire: "Select Questionnaire",
+    selectPatient: "Select Patient",
+    assignments: "Assignments",
+    startDate: "Start Date",
+    endDate: "End Date",
+    timesPerWeek: "Times per week",
+    timesPerDay: "Times per day",
+    timeWindow: "Time Window",
+    startTime: "Start Time",
+    endTime: "End Time",
+    responseDeadline: "Response Deadline",
+    paused: "Paused",
+    pause: "Pause",
+    resume: "Resume",
+    completed: "Completed",
+    deleteAssignment: "Delete Assignment",
+    noAssignments: "No active assignments found.",
+    assignQuestionnaire: "Assign Questionnaire",
+    editQuestionnaire: "Edit Questionnaire",
+  },
+  es: {
+    // Common
+    save: "Guardar",
+    cancel: "Cancelar",
+    delete: "Eliminar",
+    edit: "Editar",
+    search: "Buscar",
+    close: "Cerrar",
+    back: "Volver",
+    view: "Ver",
+    add: "Agregar",
+
+    // Auth
+    login: "Iniciar Sesión",
+    logout: "Cerrar Sesión",
+    email: "Correo Electrónico",
+    password: "Contraseña",
+    welcomeBack: "Bienvenido de nuevo, {name}",
+    overviewToday: "Resumen de las tareas pendientes de hoy",
+    loginSubtitle: "Inicia sesión para acceder a tu panel de supervisión",
+
+    // Navigation
+    dashboard: "Panel",
+    patients: "Pacientes",
+    profile: "Perfil",
+
+    // Dashboard
+    totalPatients: "Total de Pacientes",
+    unreadMessages: "Mensajes Sin Leer",
+    riskAlerts: "Alertas de Riesgo",
+    recentActivity: "Actividad Reciente",
+
+    // Patients
+    patientManagement: "Gestión de Usuarios",
+    searchPatients: "Buscar usuarios...",
+    addPatient: "Agregar Usuario",
+    createNewPatient: "Añadir Usuario",
+    editPatient: "Editar Usuario",
+    fullName: "Nombre Completo",
+    age: "Edad",
+    contactEmail: "Correo de Contacto",
+    assignedTherapist: "Terapeuta Asignado",
+    status: "Estado",
+    active: "Activo",
+    inactive: "Inactivo",
+    riskLevel: "Nivel de Riesgo",
+    low: "Bajo",
+    medium: "Medio",
+    high: "Alto",
+    risk: "Riesgo",
+    lastSession: "Última Sesión",
+    viewDetails: "Ver Detalles",
+    deletePatient: "Eliminar Paciente",
+    confirmDelete: "¿Estás seguro de que quieres eliminar este paciente?",
+    importAssessmentDesc: "Importar Evaluación",
+    importAssessment: "Importar Evaluación",
+    statusDescription: "El estado refleja si el usuario está conectado al chat o no",
+    patientNotes: "Notas del paciente",
+    addNewNote: "Agregar Nota",
+
+    // Patient Details
+    sessionHistory: "Historial de Sesiones",
+    chatView: "Chat",
+    notes: "Notas",
+    onlineSessions: "Sesiones en Línea",
+    totalSessions: "Total de Sesiones",
+    viewChat: "Ver Chat",
+    addNote: "Agregar Nota",
+    updateNote: "Actualizar Nota",
+    cancelEdit: "Cancelar Edición",
+    noteTitle: "Título de la Nota",
+    noteContent: "Contenido de la Nota",
+    searchMessages: "Buscar Mensajes...",
+    saveAndCloseChat: "Guardar y Cerrar",
+    AIGeneratedResponseSuggestions: "Respuestas Sugeridas por IA",
+    customResponse: "Tu respuesta",
+    typeMessage: "Escribe tu propia respuesta o edita una sugerencia...",
+
+
+    // Chat
+    currentChatSession: "Sesión de Chat Actual",
+    sessionNotes: "Notas de la Sesión",
+    enterNotesNotes: "Estas notas serán guardadas con la sesión cuando hagas clic en \"Guardar y Cerrar Chat\"",
+    aiSuggestions: "Respuestas Sugeridas por IA",
+    sendMessage: "Enviar Mensaje",
+    saveCloseChat: "Guardar y Cerrar Chat",
+    sessionDescription: "Asunto de la Sesión",
+    enterDescription: "Ingresa el asunto de la sesión...",
+    enterNotes: "Ingresa notas detalladas de la sesión...",
+    enterSummaryDescription: "Ingresa una breve descripción del resumen...",
+    enterSummaryNotes: "Esto será mostrado en el historial de la sesión",
+    searchConversation: "Buscar en la conversación...",
+    sessionChat: "Chat de la Sesión",
+
+    // Profile
+    profileSettings: "Configuración de Perfil",
+    availability: "Disponibilidad",
+    available: "Disponible",
+    unavailable: "No Disponible",
+    profileUpdated: "Perfil actualizado exitosamente!",
+    offline: "Desconectado",
+    online: "Conectado",
+
+    // Patient View
+    yourTherapist: "Tu Terapeuta",
+    therapistAvailable: "Actualmente Disponible",
+    therapistUnavailable: "Actualmente No Disponible",
+    contactSupport: "Para soporte o consultas, contáctanos en ",
+    confidentialSpace: "Este es un espacio seguro y confidencial. Tu terapeuta revisará tus mensajes.",
+    typeYourMessage: "Escribe tu mensaje...",
+    saveNotes: "Guardar Notas",
+
+    // Session View
+    sessionDetails: "Detalles de la Sesión",
+    duration: "Duración",
+    minutes: "minutos",
+
+    // Assessment View
+    psychologicalAssessment: "Resultados de Evaluación Psicológica",
+    assessmentSummary: "Resumen de Evaluación",
+    depressionScore: "Puntuación de Depresión",
+    anxietyScore: "Puntuación de Ansiedad",
+    stressLevel: "Nivel de Estrés",
+    recommendations: "Recomendaciones",
+    importAssessmentFormat: "Importar resultados de evaluación (CSV)",
+    addResult: "Agregar Resultado",
+    editResult: "Editar Resultado",
+    scaleName: "Nombre de la Escala",
+    scoreResult: "Puntuación/Resultado",
+
+    // Messages
+    you: "Tú",
+    patient: "Paciente",
+    therapist: "Terapeuta",
+
+    // Additional translations
+    patientId: "Número de caso",
+    patientCode: "Número de caso",
+    enterAccessCode: "Introduce tu código de acceso",
+    accessCode: "Código de Acceso",
+    accessRequired: "Acceso Requerido",
+    startChat: "Acceder al Chat",
+    invalidCode: "Código inválido. Inténtalo de nuevo.",
+    assessmentResults: "Resultados de Evaluación",
+    sessions: "Sesiones",
+    chat: "Chat",
+    viewGeneralStats: "Ver estadísticas generales",
+    hideGeneralStats: "Ocultar estadísticas generales",
+    statisticsOverTime: "Evolución de Estadísticas",
+    patientMessagesChart: "Mensajes del Paciente",
+    avgResponseTimeChart: "Tiempo de Respuesta Prom.",
+    previousNotes: "Notas Anteriores",
+    enterNewNote: "Ingresa una nueva nota...",
+    viewChatTranscript: "Ver Chat",
+    chatSession: "Sesión de Chat",
+    searchInSession: "Buscar en esta sesión...",
+    saveChanges: "Guardar Cambios",
+    personalInformation: "Información Personal",
+    profilePhoto: "Foto de Perfil",
+    clickToUpdate: "Haz clic en el ícono de la cámara para actualizar",
+    manageInfo: "Gestiona tu información personal",
+    createPatient: "Crear Usuario",
+    patientManagementDesc: "Gestiona y supervisa a tus pacientes",
+    searchByIdOrName: "Buscar por ID o nombre del usuario...",
+    unreadMessagesCount: "Mensajes Sin Leer",
+    lastContact: "Última Conexión",
+    actions: "Acciones",
+    confirmDeletePatient: "¿Estás seguro de que quieres eliminar este usuario?",
+    welcomeBackName: "Bienvenido de nuevo, Dr. Smith",
+    activeConversations: "conversaciones activas",
+    highPriority: "alta prioridad",
+    patientsNeedAttention: "Usuarios que requieren atención",
+    newMessageReceived: "Nuevo mensaje recibido",
+    completedAssessment: "Cuestionario completado",
+    highRiskAlert: "Alerta de alto riesgo",
+    ago: "hace",
+    hour: "hora",
+    hours: "horas",
+    psychologicalSupervision: "Sistema de Supervisión Psicológica",
+    defaultCredentials: "Credenciales por defecto: admin@therabot.com / admin",
+    enterPassword: "Ingresa tu contraseña",
+    clinicalSummary: "Descripción del caso",
+    chatSessionType: "Sesión de Chat",
+    totalSessionsCount: "sesiones totales",
+    sessionNotesTitle: "Notas de la Sesión",
+    noNotesForSession: "No hay notas para esta sesión.",
+    patientNotesDescription:
+      "Documenta observaciones, progreso del tratamiento e información importante sobre este paciente.",
+    viewPatientInfo: "Información del paciente",
+    viewStatistics: "Ver Estadísticas",
+    sessionStatistics: "Estadísticas de la Sesión",
+    patientMessages: "Mensajes del Paciente",
+    therapistMessages: "Mensajes del Terapeuta",
+    totalWords: "Total de Mensajes",
+    sessionDuration: "Duración de la Sesión",
+    words: "palabras",
+    patientWords: "Palabras del Paciente",
+    therapistWords: "Palabras del Terapeuta",
+    avgResponseTime: "Tiempo Promedio de Respuesta (Paciente)",
+    seconds: "segundos",
+    mild: "Leve",
+    severe: "Severo",
+    moderate: "Moderado",
+
+    // Settings
+    settings: "Configuración",
+    aiConfig: "Configuración de IA",
+    therapistStyle: "Estilo del Terapeuta",
+    tone: "Tono",
+    additionalInstructions: "Instrucciones Adicionales",
+    saveConfig: "Guardar Configuración",
+    aiConfigDesc: "Configura el comportamiento y la personalidad del asistente terapeuta IA.",
+    stylePlaceholder: "ej. TCC, Psicoanálisis, Centrado en la Persona...",
+    tonePlaceholder: "ej. Empático, Directo, Profesional...",
+    instructionsPlaceholder: "Cualquier pauta específica para que la IA siga...",
+
+    // Questionnaires
+    questionnaire: "Cuestionario",
+    activePeriod: "Periodo Activo",
+    manageQuestionnaires: "Gestionar Cuestionarios y asignaciones de pacientes",
+    questionnaires: "Cuestionarios",
+    createQuestionnaire: "Crear Cuestionario",
+    selectIcon: "Seleccionar Icono",
+    questionnaireTitle: "Título del Cuestionario",
+    addQuestion: "Agregar Pregunta",
+    questionType: "Tipo de Pregunta",
+    questionText: "Texto de la Pregunta",
+    likert: "Escala Likert",
+    frequency: "Frecuencia",
+    openText: "Texto Abierto",
+    saveQuestionnaire: "Guardar Cuestionario",
+    deleteQuestionnaire: "Eliminar Cuestionario",
+    minLabel: "Etiqueta Min (ej. Muy en Desacuerdo)",
+    maxLabel: "Etiqueta Max (ej. Muy de Acuerdo)",
+    scaleSize: "Tamaño de Escala (ej. 5)",
+    noQuestionnaires: "No se encontraron cuestionarios. Crea uno para comenzar.",
+    preview: "Vista Previa",
+    previewQuestionnaire: "Vista Previa del Cuestionario",
+    questions: "Preguntas",
+    question: "Pregunta",
+    closePreview: "Cerrar Vista Previa",
+    date: "Fecha",
+    answers: "Respuestas",
+    hideDetails: "Ocultar Detalles",
+    noQuestionnairesHistory: "No se encontraron cuestionarios completados.",
+    editQuestionnaire: "Editar Cuestionario",
+    // Assignments
+    selectQuestionnaire: "Seleccionar Cuestionario",
+    selectPatient: "Seleccionar Paciente",
+    assignments: "Asignaciones",
+    startDate: "Fecha Inicio",
+    endDate: "Fecha Fin",
+    timesPerWeek: "Veces por semana",
+    timesPerDay: "Veces por día",
+    timeWindow: "Ventana de Tiempo",
+    startTime: "Hora Inicio",
+    endTime: "Hora Fin",
+    responseDeadline: "Plazo de Respuesta",
+    paused: "Pausado",
+    pause: "Pausar",
+    resume: "Reanudar",
+    completed: "Completado",
+    deleteAssignment: "Eliminar Asignación",
+    noAssignments: "No se encontraron asignaciones activas.",
+    assignQuestionnaire: "Asignar Cuestionario",
+  },
+}
+
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguageState] = useState<Language>("es")
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem("language") as Language
+    if (savedLanguage) {
+      setLanguageState(savedLanguage)
+    }
+  }, [])
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang)
+    localStorage.setItem("language", lang)
+  }
+
+  const t = (key: string, params?: Record<string, string | number>): string => {
+    let text = translations[language][key as keyof typeof translations.en] || key
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        text = text.replace(new RegExp(`{${paramKey}}`, "g"), String(paramValue))
+      })
+    }
+    return text
+  }
+
+  return <LanguageContext.Provider value={{ language, setLanguage, t }}>{children}</LanguageContext.Provider>
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext)
+  if (context === undefined) {
+    throw new Error("useLanguage must be used within a LanguageProvider")
+  }
+  return context
+}
