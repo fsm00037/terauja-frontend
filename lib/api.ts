@@ -289,6 +289,7 @@ export async function sendMessage(payload: {
     content: string,
     is_from_patient: boolean,
     ai_suggestion_log_id?: number | null,
+    selected_option?: number | null,
     was_edited_by_human?: boolean,
 }) {
     const res = await fetchWithAuth(`${API_URL}/messages`, {

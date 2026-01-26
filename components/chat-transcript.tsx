@@ -107,13 +107,18 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
     if (!text.trim()) return;
 
     try {
-      const wasEdited = isAiUsed && text.trim() !== originalAiText?.trim();
+      // If AI suggestions were available (aiSuggestionLogId is set), we track it.
+      // was_edited_by_human is true if we either edited a suggestion OR ignored them for a custom message.
+      const wasEdited = isAiUsed
+        ? text.trim() !== originalAiText?.trim()
+        : (aiSuggestionLogId !== null);
 
       const payload = {
         patient_id: patientId,
         content: text.trim(),
         is_from_patient: false,
-        ai_suggestion_log_id: isAiUsed ? aiSuggestionLogId : null,
+        ai_suggestion_log_id: aiSuggestionLogId,
+        selected_option: isAiUsed && selectedOption !== null ? selectedOption + 1 : null,
         was_edited_by_human: wasEdited,
       };
 
