@@ -245,6 +245,7 @@ const translations = {
     hideDetails: "Hide Details",
     noQuestionnairesHistory: "No completed questionnaires found.",
     questions: "Questions",
+    confirmDeleteSession: "Are you sure you want to delete this session?",
     progress: "Progress",
     scheduled: "Scheduled",
 
@@ -474,6 +475,7 @@ const translations = {
     mild: "Leve",
     severe: "Severo",
     moderate: "Moderado",
+    confirmDeleteSession: "¿Estás seguro de que quieres eliminar esta sesión?",
 
     // Settings
     settings: "Configuración",
