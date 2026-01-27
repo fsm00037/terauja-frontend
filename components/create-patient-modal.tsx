@@ -59,7 +59,7 @@ export function CreatePatientModal({ open, onOpenChange, onCreatePatient }: Crea
         setPatientId("")
         setSelectedPsychologist("")
       } else {
-        alert("Failed to create patient")
+        alert("Error al crear paciente. Puede que el número de caso ya exista")
       }
     } catch (err) {
       console.error("Error creating patient", err)
