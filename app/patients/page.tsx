@@ -43,9 +43,14 @@ export default function PatientsPage() {
     }
   }, [router])
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm(t("confirmDeletePatient"))) {
-      setPatients(patients.filter((p) => p.id !== id))
+      const success = await api.deletePatient(id)
+      if (success) {
+        setPatients(patients.filter((p) => p.id !== id))
+      } else {
+        alert("Error al eliminar el paciente")
+      }
     }
   }
 

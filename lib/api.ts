@@ -205,6 +205,16 @@ export async function createPatient(patientCode: string, psychologistId?: string
     }
 }
 
+export async function deletePatient(id: string): Promise<boolean> {
+    try {
+        const res = await fetchWithAuth(`${API_URL}/patients/${id}`, { method: 'DELETE' });
+        return res.ok;
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+}
+
 
 export interface Note {
     id: string;
