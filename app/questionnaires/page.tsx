@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-    Send,
     CheckCircle2,
     ClipboardList,
     Plus,
@@ -26,7 +25,6 @@ import {
     Play,
     Pause,
     FileQuestion,
-    Users,
     Activity,
     Heart,
     Brain,
@@ -237,7 +235,7 @@ export default function QuestionnairePage() {
     }
 
     const handleDeleteQuestionnaire = async (id: string) => {
-        if (confirm(t("confirmDelete"))) {
+        if (confirm(t("confirmDeleteQuestionnaire"))) {
             const success = await api.deleteQuestionnaire(id)
             if (success) {
                 setQuestionnaires(questionnaires.filter(q => q.id !== id))
@@ -345,7 +343,7 @@ export default function QuestionnairePage() {
     }
 
     const handleDeleteAssignment = async (id: string) => {
-        if (confirm(t("confirmDelete"))) {
+        if (confirm(t("confirmDeleteQuestionnaire"))) {
             const success = await api.deleteAssignment(id)
             if (success) {
                 setAssignments(assignments.filter(a => a.id !== id))

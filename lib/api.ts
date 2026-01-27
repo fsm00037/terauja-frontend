@@ -80,6 +80,7 @@ interface BackendPatient {
     created_at: string;
     clinical_summary?: string;
     unread_messages?: number;
+    unread_questionnaires?: number;
     is_online?: boolean;
     total_online_seconds?: number;
     last_active?: string;
@@ -117,6 +118,7 @@ export interface Patient {
     psychologistName?: string;
     psychologistSchedule?: string;
     unreadMessages: number;
+    unreadQuestionnaires: number;
     uncheckedQuestionnaires: number;
     lastContact: string;
     status: "active" | "inactive";
@@ -147,6 +149,7 @@ export async function getPatients(psychologistId?: string): Promise<Patient[]> {
             psychologistName: p.psychologist_name,
             psychologistSchedule: p.psychologist_schedule,
             unreadMessages: p.unread_messages || 0,
+            unreadQuestionnaires: p.unread_questionnaires || 0,
             uncheckedQuestionnaires: 0, // Default
             lastContact: new Date(p.created_at).toISOString().split('T')[0],
             status: "active",
@@ -189,6 +192,7 @@ export async function createPatient(patientCode: string, psychologistId?: string
             psychologistName: p.psychologist_name,
             psychologistSchedule: p.psychologist_schedule,
             unreadMessages: 0,
+            unreadQuestionnaires: 0,
             uncheckedQuestionnaires: 0,
             lastContact: new Date(p.created_at).toISOString().split('T')[0],
             status: "active",
@@ -305,6 +309,18 @@ export async function markMessagesAsRead(patientId: string): Promise<boolean> {
     try {
         const res = await fetchWithAuth(`${API_URL}/messages/mark-read/${patientId}`, {
             method: 'POST',
+        });
+        return res.ok;
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+}
+
+export async function markQuestionnaireAsRead(completionId: string): Promise<boolean> {
+    try {
+        const res = await fetchWithAuth(`${API_URL}/assignments/completions/${completionId}/read`, {
+            method: 'PATCH',
         });
         return res.ok;
     } catch (e) {
@@ -686,6 +702,7 @@ export async function patientLogin(patientCode: string, accessCode: string): Pro
             psychologistName: data.psychologist_name,
             psychologistSchedule: data.psychologist_schedule,
             unreadMessages: 0,
+            unreadQuestionnaires: 0,
             uncheckedQuestionnaires: 0,
             lastContact: new Date().toISOString().split('T')[0],
             status: "active",

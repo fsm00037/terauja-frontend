@@ -13,7 +13,7 @@ export default function DashboardPage() {
   const { t } = useLanguage()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [userName, setUserName] = useState("Dr. Smith")
-  const [stats, setStats] = useState<any>({ total_patients: 0, total_messages: 0, recent_activity: [], completed_questionnaires: 0, pending_questionnaires: 0 })
+  const [stats, setStats] = useState<any>({ total_patients: 0, total_messages: 0, recent_activity: [], completed_questionnaires: 0, pending_questionnaires: 0, unread_questionnaires: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -64,13 +64,13 @@ export default function DashboardPage() {
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="rounded-2xl border-soft-gray shadow-soft">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{t("totalPatients")}</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Usuarios En línea</CardTitle>
               <Users className="h-5 w-5 text-calm-teal" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-semibold text-neutral-charcoal">{stats.total_patients}</div>
+              <div className="text-3xl font-semibold text-neutral-charcoal">{stats.online_patients || 0}</div>
               <p className="text-xs text-muted-foreground mt-2">
-                <span className="text-calm-teal font-medium">{stats.online_patients || 0} usuarios online</span>
+                <span className="text-calm-teal font-medium">{t("totalPatients")}: {stats.total_patients}</span>
               </p>
             </CardContent>
           </Card>
@@ -83,20 +83,20 @@ export default function DashboardPage() {
             <CardContent>
               <div className="text-3xl font-semibold text-neutral-charcoal">{stats.total_messages}</div>
               <p className="text-xs text-muted-foreground mt-2">
-                <span className="text-calm-teal font-medium">{stats.total_messages} mensajes totales</span>
+                <span className="text-calm-teal font-medium">Total de Mensajes: {stats.total_messages}</span>
               </p>
             </CardContent>
           </Card>
 
           <Card className="rounded-2xl border-soft-gray shadow-soft">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Cuestionarios completados</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Cuestionarios Sin Leer</CardTitle>
               <ClipboardList className="h-5 w-5 text-calm-teal" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-semibold text-neutral-charcoal">{stats.completed_questionnaires}</div>
+              <div className="text-3xl font-semibold text-neutral-charcoal">{stats.unread_questionnaires}</div>
               <p className="text-xs text-muted-foreground mt-2">
-                <span className="text-calm-teal font-medium">{stats.pending_questionnaires} cuestionarios no completados</span>
+                <span className="text-calm-teal font-medium">Total de Cuestionarios Completados: {stats.completed_questionnaires}</span>
               </p>
             </CardContent>
           </Card>
@@ -134,9 +134,15 @@ export default function DashboardPage() {
                         {activity.patient_id && (
                           <div
                             className="text-xs text-calm-teal cursor-pointer hover:underline"
-                            onClick={() => router.push(`/patients/${activity.patient_id}/statistics?openChat=true`)}
+                            onClick={() => {
+                              if (activity.type === "assignment") {
+                                router.push(`/patients/${activity.patient_id}/statistics?tab=questionnaires`)
+                              } else {
+                                router.push(`/patients/${activity.patient_id}/statistics?openChat=true`)
+                              }
+                            }}
                           >
-                            Ver Chat
+                            {activity.type === "assignment" ? "Ver Cuestionarios" : "Ver Chat"}
                           </div>
                         )}
                       </div>
