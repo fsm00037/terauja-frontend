@@ -101,6 +101,7 @@ export default function PatientStatisticsPage() {
       options?: string[]
       maxValue?: number
     }[]
+    readByTherapist: boolean
   }
 
   const [questionnaireHistory, setQuestionnaireHistory] = useState<AnsweredQuestionnaire[]>([])
@@ -119,17 +120,10 @@ export default function PatientStatisticsPage() {
           id: c.id,
           questionnaireTitle: c.questionnaire?.title || "Cuestionario",
           icon: c.questionnaire?.icon || "FileQuestion",
-          date: c.completedAt ? new Date(c.completedAt).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Fecha desconocida",
-          rawDate: c.completedAt ? new Date(c.completedAt) : new Date(),
-          time: c.completedAt ? new Date(c.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--",
+          date: c.completedAt ? new Date(c.completedAt + "Z").toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Fecha desconocida",
+          rawDate: c.completedAt ? new Date(c.completedAt + "Z") : new Date(),
+          time: c.completedAt ? new Date(c.completedAt + "Z").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--",
           answers: (c.answers || []).map((ans: any, idx: number) => {
-            // Find the definition if possible (we might need full questionnaire details, but let's try to map from what we have)
-            // c.questionnaire in completion might be slim (title, icon). 
-            // Ideally backend sends full questionnaire or we fetch it. 
-            // For now, let's assume we rely on the answer text or try to fetch definitions.
-            // Actually, getQuestionnaireCompletions returns questionnaire title/icon.
-            // But answers usually contain { question_text, answer, ... } based on how we save them.
-
             return {
               questionText: ans.question_text || ans.questionId || "Pregunta",
               answer: ans.value || ans.answer, // Check both value and answer keys
@@ -137,7 +131,8 @@ export default function PatientStatisticsPage() {
               options: ans.options || [],
               maxValue: ans.max_value || 5
             }
-          })
+          }),
+          readByTherapist: (c as any).read_by_therapist || false
         }))
         setQuestionnaireHistory(history)
       })
@@ -146,11 +141,23 @@ export default function PatientStatisticsPage() {
 
   const [expandedQuestionnaireId, setExpandedQuestionnaireId] = useState<string | null>(null)
 
-  const toggleQuestionnaireDetails = (id: string) => {
+  const toggleQuestionnaireDetails = async (id: string) => {
     if (expandedQuestionnaireId === id) {
       setExpandedQuestionnaireId(null)
     } else {
       setExpandedQuestionnaireId(id)
+
+      // Find the questionnaire in history
+      const q = questionnaireHistory.find(item => item.id === id)
+      if (q && !q.readByTherapist) {
+        const success = await api.markQuestionnaireAsRead(id)
+        if (success) {
+          // Update local state to reflect it's read
+          setQuestionnaireHistory(prev => prev.map(item =>
+            item.id === id ? { ...item, readByTherapist: true } : item
+          ))
+        }
+      }
     }
   }
 
@@ -214,8 +221,13 @@ export default function PatientStatisticsPage() {
   }, [patientId])
 
   useEffect(() => {
-    if (searchParams.get('openChat') === 'true') {
+    const openChat = searchParams.get('openChat') === 'true'
+    const tab = searchParams.get('tab')
+
+    if (openChat) {
       setActiveTab('chat')
+    } else if (tab === 'questionnaires') {
+      setActiveTab('questionnaires')
     }
   }, [searchParams])
 

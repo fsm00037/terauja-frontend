@@ -142,9 +142,12 @@ export default function PatientsPage() {
                         )}
                       </td>
                       <td className="py-4 px-4 text-neutral-charcoal">
-                        {patient.uncheckedQuestionnaires > 0 && (
-                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-calm-teal/20 text-calm-teal font-medium text-sm">
-                            {patient.uncheckedQuestionnaires}
+                        {patient.unreadQuestionnaires > 0 && (
+                          <span
+                            onClick={() => router.push(`/patients/${patient.id}/statistics?tab=questionnaires`)}
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-calm-teal/20 text-calm-teal font-medium text-sm cursor-pointer hover:bg-calm-teal/30 transition-colors"
+                          >
+                            {patient.unreadQuestionnaires}
                           </span>
                         )}
                       </td>

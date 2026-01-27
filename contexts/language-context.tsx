@@ -248,6 +248,8 @@ const translations = {
     confirmDeleteSession: "Are you sure you want to delete this session?",
     progress: "Progress",
     scheduled: "Scheduled",
+    confirmComplete: "Are you sure you want to complete this questionnaire?",
+    confirmDeleteQuestionnaire: "Are you sure you want to delete this questionnaire?",
 
 
     // Assignments
@@ -521,6 +523,8 @@ const translations = {
     editQuestionnaire: "Editar Cuestionario",
     progress: "Progreso",
     scheduled: "Programado",
+    confirmComplete: "¿Estás seguro de completar este cuestionario?",
+    confirmDeleteQuestionnaire: "¿Estás seguro de eliminar este cuestionario?",
 
     // Assignments
     selectQuestionnaire: "Seleccionar Cuestionario",
