@@ -500,6 +500,10 @@ export interface Question {
     text: string
     type: "likert" | "frequency" | "openText"
     options?: string[]
+    min?: number
+    max?: number
+    minLabel?: string
+    maxLabel?: string
 }
 
 export interface Questionnaire {
@@ -748,6 +752,7 @@ export interface QuestionnaireCompletion {
     questionnaire?: {
         title: string
         icon: string
+        questions?: Question[]
     }
 }
 
@@ -768,7 +773,8 @@ export async function getQuestionnaireCompletions(patientId: string): Promise<Qu
             isDelayed: c.is_delayed,
             questionnaire: c.questionnaire ? {
                 title: c.questionnaire.title,
-                icon: c.questionnaire.icon || "FileQuestion"
+                icon: c.questionnaire.icon || "FileQuestion",
+                questions: c.questionnaire.questions
             } : undefined
         }));
     } catch (e) {
