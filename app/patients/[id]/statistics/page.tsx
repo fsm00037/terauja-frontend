@@ -124,12 +124,13 @@ export default function PatientStatisticsPage() {
           rawDate: c.completedAt ? new Date(c.completedAt + "Z") : new Date(),
           time: c.completedAt ? new Date(c.completedAt + "Z").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--",
           answers: (c.answers || []).map((ans: any, idx: number) => {
+            const qDef = c.questionnaire?.questions?.[idx]
             return {
-              questionText: ans.question_text || ans.questionId || "Pregunta",
+              questionText: ans.question_text || qDef?.text || ans.questionId || "Pregunta",
               answer: ans.value || ans.answer, // Check both value and answer keys
-              type: ans.type || "openText",
-              options: ans.options || [],
-              maxValue: ans.max_value || 5
+              type: ans.type || qDef?.type || "openText",
+              options: ans.options || qDef?.options || [],
+              maxValue: ans.max_value || qDef?.max || 5
             }
           }),
           readByTherapist: (c as any).read_by_therapist || false
@@ -140,6 +141,46 @@ export default function PatientStatisticsPage() {
   }, [patientId])
 
   const [expandedQuestionnaireId, setExpandedQuestionnaireId] = useState<string | null>(null)
+  const [selectedGraphQuestion, setSelectedGraphQuestion] = useState<string | null>(null)
+
+  // Reset selected question when filter changes
+  useEffect(() => {
+    setSelectedGraphQuestion(null)
+  }, [questionnaireFilter])
+
+  // Get available questions for the selected questionnaire type
+  const availableGraphQuestions = useMemo(() => {
+    if (questionnaireFilter === "all") return []
+
+    // Map question text to its number (index + 1) in the questionnaire history
+    // We use the first completion of this type to determine the order
+    const sample = questionnaireHistory.find(q => q.questionnaireTitle === questionnaireFilter)
+    if (!sample) return []
+
+    return sample.answers
+      .map((ans, idx) => ({ text: ans.questionText, number: idx + 1, type: ans.type }))
+      .filter(q => q.type === "likert" || q.type === "scale")
+  }, [questionnaireHistory, questionnaireFilter])
+
+  // Prepare data for the chart
+  const graphData = useMemo(() => {
+    if (questionnaireFilter === "all" || !selectedGraphQuestion) return []
+
+    return questionnaireHistory
+      .filter(q => q.questionnaireTitle === questionnaireFilter)
+      .map(q => {
+        const answer = q.answers.find(ans => ans.questionText === selectedGraphQuestion)
+        return {
+          date: q.date,
+          dateTime: `${q.date} ${q.time}`,
+          fullDate: q.rawDate,
+          score: answer ? Number(answer.answer) : null,
+          time: q.time
+        }
+      })
+      .filter(d => d.score !== null)
+      .sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime())
+  }, [questionnaireHistory, questionnaireFilter, selectedGraphQuestion])
 
   const toggleQuestionnaireDetails = async (id: string) => {
     if (expandedQuestionnaireId === id) {
@@ -1420,6 +1461,76 @@ export default function PatientStatisticsPage() {
               </div>
             </CardHeader>
             <CardContent className="pt-6">
+              {questionnaireFilter !== "all" && availableGraphQuestions.length > 0 && (
+                <div className="mb-8 p-6 rounded-2xl border border-soft-gray bg-muted/10">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <h3 className="text-sm font-semibold text-neutral-charcoal flex items-center gap-2">
+                      <BarChart2 className="h-4 w-4 text-calm-teal" />
+                      Evolución de puntuaciones
+                    </h3>
+                    <div className="w-full md:w-[350px]">
+                      <Select value={selectedGraphQuestion || ""} onValueChange={setSelectedGraphQuestion}>
+                        <SelectTrigger className="h-9 rounded-xl border-soft-gray bg-white">
+                          <SelectValue placeholder="Selecciona una pregunta para visualizar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableGraphQuestions.map((q) => (
+                            <SelectItem key={q.text} value={q.text}>
+                              Pregunta {q.number}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {selectedGraphQuestion ? (
+                    <div className="h-[300px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={graphData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                          <XAxis
+                            dataKey="dateTime"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: "#6B7280", fontSize: 10 }}
+                            dy={10}
+                          />
+                          <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: "#6B7280", fontSize: 11 }}
+                            domain={[0, 'auto']}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#FFF",
+                              borderRadius: "12px",
+                              border: "1px solid #E5E7EB",
+                              boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"
+                            }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="score"
+                            name="Puntuación"
+                            stroke="#0D9488"
+                            strokeWidth={3}
+                            dot={{ r: 4, fill: "#0D9488", strokeWidth: 2, stroke: "#FFF" }}
+                            activeDot={{ r: 6, strokeWidth: 0 }}
+                            animationDuration={1000}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-soft-gray rounded-xl">
+                      <BarChart2 className="h-10 w-10 mb-2 opacity-20" />
+                      <p className="text-sm font-medium">Selecciona una pregunta para ver la gráfica</p>
+                    </div>
+                  )}
+                </div>
+              )}
               {questionnaireHistory.length === 0 ? (
                 <div className="text-center py-16 text-muted-foreground">
                   <ClipboardList className="h-16 w-16 mx-auto mb-4 opacity-20" />
