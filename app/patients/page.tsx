@@ -125,8 +125,36 @@ export default function PatientsPage() {
                             size="sm"
                             className="h-6 w-6 p-0 hover:bg-calm-teal/10 hover:text-calm-teal"
                             onClick={() => {
-                              navigator.clipboard.writeText(patient.access_code)
-                              alert("Código copiado: " + patient.access_code)
+                              const copyToClipboard = async (text: string) => {
+                                try {
+                                  if (navigator.clipboard && window.isSecureContext) {
+                                    await navigator.clipboard.writeText(text);
+                                    alert("Código copiado: " + text);
+                                  } else {
+                                    // Fallback for insecure context (HTTP)
+                                    const textArea = document.createElement("textarea");
+                                    textArea.value = text;
+                                    textArea.style.position = "fixed";
+                                    textArea.style.left = "-999999px";
+                                    textArea.style.top = "-999999px";
+                                    document.body.appendChild(textArea);
+                                    textArea.focus();
+                                    textArea.select();
+                                    try {
+                                      document.execCommand('copy');
+                                      alert("Código copiado: " + text);
+                                    } catch (err) {
+                                      console.error('Fallback: Oops, unable to copy', err);
+                                      alert("No se pudo copiar el código automáticamente");
+                                    }
+                                    document.body.removeChild(textArea);
+                                  }
+                                } catch (err) {
+                                  console.error('Failed to copy: ', err);
+                                  alert("Error al copiar el código");
+                                }
+                              };
+                              copyToClipboard(patient.access_code);
                             }}
                           >
                             <Copy className="h-3 w-3" />
