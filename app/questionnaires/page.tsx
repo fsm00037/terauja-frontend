@@ -307,8 +307,21 @@ export default function QuestionnairePage() {
         setIsRecurrent(true)
     }
 
+    // Helper to convert local time "HH:mm" to UTC "HH:mm"
+    const toUTC = (timeStr: string) => {
+        if (!timeStr) return timeStr;
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes, 0, 0);
+        return date.toISOString().substr(11, 5);
+    };
+
     const handleSaveAssignment = async () => {
         if (!selectedPatient || !selectedQuestionnaire || !startDate || (isRecurrent && !endDate)) return
+
+        // Convert window times to UTC for server
+        const utcWindowStart = toUTC(windowStart);
+        const utcWindowEnd = isRecurrent ? toUTC(windowEnd) : utcWindowStart; // For one-time, start/end times are same concept if used
 
         const newAssignment = await api.createAssignment({
             patientId: selectedPatient,
@@ -317,8 +330,8 @@ export default function QuestionnairePage() {
             endDate: isRecurrent ? endDate : startDate,
             frequencyType: isRecurrent ? frequencyType : "daily",
             frequencyCount: isRecurrent ? frequencyCount : 1,
-            windowStart,
-            windowEnd: isRecurrent ? windowEnd : windowStart,
+            windowStart: utcWindowStart,
+            windowEnd: utcWindowEnd,
             deadlineHours,
             minHoursBetween,
             status: "active"
