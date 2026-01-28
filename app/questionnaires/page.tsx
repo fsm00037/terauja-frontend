@@ -749,7 +749,8 @@ export default function QuestionnairePage() {
                                                                                     <Button size="icon" className="h-7 w-7 bg-calm-teal text-white" onClick={(e) => {
                                                                                         e.stopPropagation()
                                                                                         if (singleCompletion.id && editDate && editTime) {
-                                                                                            api.updateQuestionnaireCompletion(singleCompletion.id, { scheduledAt: `${editDate}T${editTime}:00` })
+                                                                                            const localDate = new Date(`${editDate}T${editTime}`)
+                                                                                            api.updateQuestionnaireCompletion(singleCompletion.id, { scheduledAt: localDate.toISOString() })
                                                                                                 .then(() => { fetchData(); setEditingCompletionId(null) })
                                                                                         }
                                                                                     }}>
@@ -1024,7 +1025,8 @@ export default function QuestionnairePage() {
                                                                                                                     />
                                                                                                                     <Button size="icon" className="h-7 w-7 bg-calm-teal text-white" onClick={async () => {
                                                                                                                         if (!c.id || !editDate || !editTime) return
-                                                                                                                        await api.updateQuestionnaireCompletion(c.id, { scheduledAt: `${editDate}T${editTime}:00` })
+                                                                                                                        const localDate = new Date(`${editDate}T${editTime}`)
+                                                                                                                        await api.updateQuestionnaireCompletion(c.id, { scheduledAt: localDate.toISOString() })
                                                                                                                         fetchData(); setEditingCompletionId(null)
                                                                                                                     }}><Save className="h-3.5 w-3.5" /></Button>
                                                                                                                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingCompletionId(null)}><X className="h-3.5 w-3.5" /></Button>
