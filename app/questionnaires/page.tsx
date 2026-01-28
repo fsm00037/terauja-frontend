@@ -125,6 +125,18 @@ const AVAILABLE_ICONS = [
     { name: "FileQuestion", icon: FileQuestion },
 ]
 
+// Helper to generic safe date object from string (handling potential missing Z from backend)
+const getSafeDate = (dateStr: string) => {
+    if (!dateStr) return new Date();
+    // If it looks like ISO but no Z and no offset, assume UTC and append Z
+    if (dateStr.includes('T') && !dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.split('T')[1].includes('-')) {
+        return new Date(dateStr + 'Z');
+    }
+    return new Date(dateStr);
+}
+
+// ... inside component ...
+
 export default function QuestionnairePage() {
     const router = useRouter()
     const { t } = useLanguage()
@@ -767,7 +779,7 @@ export default function QuestionnairePage() {
                                                                                 <>
                                                                                     {singleCompletion.status === 'pending' && singleCompletion.scheduledAt && (() => {
                                                                                         const now = new Date()
-                                                                                        const scheduled = new Date(singleCompletion.scheduledAt)
+                                                                                        const scheduled = getSafeDate(singleCompletion.scheduledAt)
                                                                                         const diffMs = scheduled.getTime() - now.getTime()
 
                                                                                         if (diffMs < 0) {
@@ -805,9 +817,14 @@ export default function QuestionnairePage() {
                                                                                                         e.stopPropagation()
                                                                                                         setEditingCompletionId(singleCompletion.id)
                                                                                                         if (singleCompletion.scheduledAt) {
-                                                                                                            const d = new Date(singleCompletion.scheduledAt)
-                                                                                                            setEditDate(d.toISOString().split("T")[0])
-                                                                                                            setEditTime(d.toTimeString().slice(0, 5))
+                                                                                                            const d = getSafeDate(singleCompletion.scheduledAt)
+                                                                                                            const year = d.getFullYear()
+                                                                                                            const month = String(d.getMonth() + 1).padStart(2, '0')
+                                                                                                            const day = String(d.getDate()).padStart(2, '0')
+                                                                                                            const hours = String(d.getHours()).padStart(2, '0')
+                                                                                                            const minutes = String(d.getMinutes()).padStart(2, '0')
+                                                                                                            setEditDate(`${year}-${month}-${day}`)
+                                                                                                            setEditTime(`${hours}:${minutes}`)
                                                                                                         }
                                                                                                     }}
                                                                                                 >
@@ -893,15 +910,15 @@ export default function QuestionnairePage() {
 
                                                             // Group completions by week
                                                             const sortedCompletions = assignmentCompletions.sort((x, y) => {
-                                                                const tA = x.scheduledAt ? new Date(x.scheduledAt).getTime() : 0
-                                                                const tB = y.scheduledAt ? new Date(y.scheduledAt).getTime() : 0
+                                                                const tA = x.scheduledAt ? getSafeDate(x.scheduledAt).getTime() : 0
+                                                                const tB = y.scheduledAt ? getSafeDate(y.scheduledAt).getTime() : 0
                                                                 return tA - tB
                                                             })
 
                                                             const completionsByWeek: { [key: string]: typeof assignmentCompletions } = {}
                                                             sortedCompletions.forEach((c) => {
                                                                 if (c.scheduledAt) {
-                                                                    const date = new Date(c.scheduledAt)
+                                                                    const date = getSafeDate(c.scheduledAt)
                                                                     const { week, year } = getWeekInfo(date)
                                                                     const key = `${year}-W${week}`
                                                                     if (!completionsByWeek[key]) {
@@ -960,11 +977,11 @@ export default function QuestionnairePage() {
                                                                                                                 <div className="flex flex-col gap-1">
                                                                                                                     <div className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
                                                                                                                         <Calendar className="h-3.5 w-3.5 text-calm-teal" />
-                                                                                                                        <span>{new Date(c.scheduledAt).toLocaleDateString()}</span>
+                                                                                                                        <span>{getSafeDate(c.scheduledAt).toLocaleDateString()}</span>
                                                                                                                     </div>
                                                                                                                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                                                                                                         <Clock className="h-3.5 w-3.5 text-gray-400" />
-                                                                                                                        <span>{new Date(c.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                                                                        <span>{getSafeDate(c.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                                                                                     </div>
                                                                                                                 </div>
                                                                                                             ) : "—"}
@@ -981,7 +998,7 @@ export default function QuestionnairePage() {
                                                                                                         <td className="px-4 py-3">
                                                                                                             {c.status === 'pending' && c.scheduledAt && (() => {
                                                                                                                 const now = new Date()
-                                                                                                                const scheduled = new Date(c.scheduledAt)
+                                                                                                                const scheduled = getSafeDate(c.scheduledAt)
                                                                                                                 const diffMs = scheduled.getTime() - now.getTime()
 
                                                                                                                 if (diffMs < 0) {
@@ -1038,9 +1055,14 @@ export default function QuestionnairePage() {
                                                                                                                         onClick={() => {
                                                                                                                             setEditingCompletionId(c.id)
                                                                                                                             if (c.scheduledAt) {
-                                                                                                                                const d = new Date(c.scheduledAt)
-                                                                                                                                setEditDate(d.toISOString().split("T")[0])
-                                                                                                                                setEditTime(d.toTimeString().slice(0, 5))
+                                                                                                                                const d = getSafeDate(c.scheduledAt)
+                                                                                                                                const year = d.getFullYear()
+                                                                                                                                const month = String(d.getMonth() + 1).padStart(2, '0')
+                                                                                                                                const day = String(d.getDate()).padStart(2, '0')
+                                                                                                                                const hours = String(d.getHours()).padStart(2, '0')
+                                                                                                                                const minutes = String(d.getMinutes()).padStart(2, '0')
+                                                                                                                                setEditDate(`${year}-${month}-${day}`)
+                                                                                                                                setEditTime(`${hours}:${minutes}`)
                                                                                                                             }
                                                                                                                         }}
                                                                                                                     >
