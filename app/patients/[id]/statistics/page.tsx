@@ -142,6 +142,7 @@ export default function PatientStatisticsPage() {
 
   const [expandedQuestionnaireId, setExpandedQuestionnaireId] = useState<string | null>(null)
   const [selectedGraphQuestion, setSelectedGraphQuestion] = useState<string | null>(null)
+  const [graphDateFilter, setGraphDateFilter] = useState<"all" | "week" | "month">("all")
 
   // Reset selected question when filter changes
   useEffect(() => {
@@ -162,12 +163,20 @@ export default function PatientStatisticsPage() {
       .filter(q => q.type === "likert" || q.type === "scale")
   }, [questionnaireHistory, questionnaireFilter])
 
-  // Prepare data for the chart
   const graphData = useMemo(() => {
     if (questionnaireFilter === "all" || !selectedGraphQuestion) return []
 
+    const now = new Date()
+    let cutoffDate: Date | null = null
+    if (graphDateFilter === "week") {
+      cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    } else if (graphDateFilter === "month") {
+      cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    }
+
     return questionnaireHistory
       .filter(q => q.questionnaireTitle === questionnaireFilter)
+      .filter(q => !cutoffDate || q.rawDate >= cutoffDate)
       .map(q => {
         const answer = q.answers.find(ans => ans.questionText === selectedGraphQuestion)
         return {
@@ -180,7 +189,7 @@ export default function PatientStatisticsPage() {
       })
       .filter(d => d.score !== null)
       .sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime())
-  }, [questionnaireHistory, questionnaireFilter, selectedGraphQuestion])
+  }, [questionnaireHistory, questionnaireFilter, selectedGraphQuestion, graphDateFilter])
 
   const toggleQuestionnaireDetails = async (id: string) => {
     if (expandedQuestionnaireId === id) {
@@ -1240,7 +1249,7 @@ export default function PatientStatisticsPage() {
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="font-medium text-neutral-charcoal">
-                                  {message.sender === "patient" ? "Patient" : "Therapist"}
+                                  {message.sender === "patient" ? t("patient") : t("therapist")}
                                 </p>
                                 <p className="text-xs text-muted-foreground">{new Date(message.timestamp + "Z").toLocaleTimeString("es-ES", {
                                   hour: "2-digit",
@@ -1468,19 +1477,33 @@ export default function PatientStatisticsPage() {
                       <BarChart2 className="h-4 w-4 text-calm-teal" />
                       Evolución de puntuaciones
                     </h3>
-                    <div className="w-full md:w-[350px]">
-                      <Select value={selectedGraphQuestion || ""} onValueChange={setSelectedGraphQuestion}>
-                        <SelectTrigger className="h-9 rounded-xl border-soft-gray bg-white">
-                          <SelectValue placeholder="Selecciona una pregunta para visualizar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableGraphQuestions.map((q) => (
-                            <SelectItem key={q.text} value={q.text}>
-                              Pregunta {q.number}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="flex flex-col md:flex-row gap-2">
+                      <div className="w-full md:w-[200px]">
+                        <Select value={graphDateFilter} onValueChange={(v) => setGraphDateFilter(v as "all" | "week" | "month")}>
+                          <SelectTrigger className="h-9 rounded-xl border-soft-gray bg-white">
+                            <SelectValue placeholder="Período" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Todo el tiempo</SelectItem>
+                            <SelectItem value="week">Última semana</SelectItem>
+                            <SelectItem value="month">Último mes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="w-full md:w-[250px]">
+                        <Select value={selectedGraphQuestion || ""} onValueChange={setSelectedGraphQuestion}>
+                          <SelectTrigger className="h-9 rounded-xl border-soft-gray bg-white">
+                            <SelectValue placeholder="Selecciona una pregunta" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableGraphQuestions.map((q) => (
+                              <SelectItem key={q.text} value={q.text}>
+                                Pregunta {q.number}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
 
