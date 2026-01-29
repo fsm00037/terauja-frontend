@@ -274,7 +274,14 @@ export default function QuestionnairePage() {
     const handleSaveQuestionnaire = async () => {
         if (!title.trim()) return
         if (editingId) {
-            alert("Update not fully implemented in API wrapper yet")
+            const updatedQ = await api.updateQuestionnaire(editingId, title, selectedIcon, questions)
+            if (updatedQ) {
+                setQuestionnaires(questionnaires.map(q => q.id === editingId ? updatedQ : q))
+                setIsCreating(false)
+                setEditingId(null)
+            } else {
+                alert("Error al actualizar el cuestionario")
+            }
             return
         }
         const newQ = await api.createQuestionnaire(title, selectedIcon, questions)
@@ -283,7 +290,7 @@ export default function QuestionnairePage() {
             setIsCreating(false)
             setEditingId(null)
         } else {
-            alert("Error creating questionnaire")
+            alert("Error al crear el cuestionario")
         }
     }
 
@@ -539,9 +546,9 @@ export default function QuestionnairePage() {
                                     return (
                                         <Card
                                             key={q.id}
-                                            className="group rounded-3xl border border-gray-200/80 bg-white hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+                                            className="group rounded-2xl border border-gray-200/80 bg-white hover:shadow-lg transition-shadow duration-200 cursor-pointer"
                                         >
-                                            <CardContent className="p-6 space-y-4">
+                                            <CardContent className="p-4 space-y-3">
                                                 {/* Icon Section */}
                                                 <div className="flex items-start justify-between gap-4">
                                                     <div className="h-14 w-14 rounded-2xl bg-calm-teal/10 flex items-center justify-center shrink-0 group-hover:bg-calm-teal/20 transition-colors">
@@ -589,11 +596,6 @@ export default function QuestionnairePage() {
                                                             <div className="h-1.5 w-1.5 rounded-full bg-calm-teal" />
                                                             <span className="font-medium">{q.questions.length}</span>
                                                             <span>{q.questions.length === 1 ? 'pregunta' : 'preguntas'}</span>
-                                                        </div>
-                                                        <span className="text-gray-300">•</span>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Calendar className="h-3.5 w-3.5" />
-                                                            <span className="text-xs">{new Date(q.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                                         </div>
                                                     </div>
                                                 </div>

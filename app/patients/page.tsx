@@ -114,7 +114,8 @@ export default function PatientsPage() {
                   {filteredPatients.map((patient) => (
                     <tr
                       key={patient.id}
-                      className="border-b border-soft-gray last:border-0 hover:bg-muted/30 transition-colors"
+                      onClick={() => router.push(`/patients/${patient.id}/statistics`)}
+                      className="border-b border-soft-gray last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
                     >
                       <td className="py-4 px-4 font-medium text-neutral-charcoal">{patient.patientCode}</td>
                       <td className="py-4 px-4 text-neutral-charcoal">
@@ -124,7 +125,8 @@ export default function PatientsPage() {
                             variant="ghost"
                             size="sm"
                             className="h-6 w-6 p-0 hover:bg-calm-teal/10 hover:text-calm-teal"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation()
                               navigator.clipboard.writeText(patient.access_code)
                               alert("Código copiado: " + patient.access_code)
                             }}
@@ -149,7 +151,10 @@ export default function PatientsPage() {
                       <td className="py-4 px-4 text-neutral-charcoal">
                         {patient.unreadQuestionnaires > 0 && (
                           <span
-                            onClick={() => router.push(`/patients/${patient.id}/statistics?tab=questionnaires`)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/patients/${patient.id}/statistics?tab=questionnaires`)
+                            }}
                             className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-calm-teal/20 text-calm-teal font-medium text-sm cursor-pointer hover:bg-calm-teal/30 transition-colors"
                           >
                             {patient.unreadQuestionnaires}
@@ -159,10 +164,12 @@ export default function PatientsPage() {
                       <td className="py-4 px-4 text-sm text-neutral-charcoal">
                         {patient.psychologistName || "Sin Asignar"}
                       </td>
-                      <td className="py-4 px-4 text-muted-foreground">{new Date(patient.lastContact + "Z").toLocaleString("es-ES", {
+                      <td className="py-4 px-4 text-muted-foreground">{new Date(patient.lastActive + "Z").toLocaleString("es-ES", {
                         day: "2-digit",
                         month: "2-digit",
                         year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}</td>
                       <td className="py-4 px-4">
                         <span
@@ -180,7 +187,10 @@ export default function PatientsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => router.push(`/patients/${patient.id}/statistics`)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/patients/${patient.id}/statistics`)
+                            }}
                             className="h-9 w-9 p-0 rounded-lg hover:bg-calm-teal/10 hover:text-calm-teal"
                           >
                             <Eye className="h-4 w-4" />
@@ -188,7 +198,10 @@ export default function PatientsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDelete(patient.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(patient.id)
+                            }}
                             className="h-9 w-9 p-0 rounded-lg hover:bg-soft-coral/10 hover:text-soft-coral"
                           >
                             <Trash2 className="h-4 w-4" />

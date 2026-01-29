@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Settings as SettingsIcon, Save } from "lucide-react"
+import { Settings as SettingsIcon, Save, Mail } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { getUserProfile, updateUserProfile } from "@/lib/api"
 
@@ -101,10 +101,21 @@ export default function SettingsPage() {
                                 <Input
                                     id="style"
                                     value={style}
-                                    onChange={(e) => setStyle(e.target.value)}
+                                    onChange={(e) => {
+                                        const newValue = e.target.value;
+                                        if (newValue.length <= 100) {
+                                            setStyle(newValue);
+                                        } else {
+                                            alert('El estilo no puede superar los 100 caracteres');
+                                        }
+                                    }}
                                     placeholder={t("stylePlaceholder")}
                                     className="h-11 rounded-xl border-soft-gray"
+                                    maxLength={100}
                                 />
+                                <p className="text-xs text-gray-500 text-right">
+                                    {style.length}/100 caracteres
+                                </p>
                             </div>
 
                             <div className="space-y-2">
@@ -114,10 +125,21 @@ export default function SettingsPage() {
                                 <Input
                                     id="tone"
                                     value={tone}
-                                    onChange={(e) => setTone(e.target.value)}
+                                    onChange={(e) => {
+                                        const newValue = e.target.value;
+                                        if (newValue.length <= 100) {
+                                            setTone(newValue);
+                                        } else {
+                                            alert('El tono no puede superar los 100 caracteres');
+                                        }
+                                    }}
                                     placeholder={t("tonePlaceholder")}
                                     className="h-11 rounded-xl border-soft-gray"
+                                    maxLength={100}
                                 />
+                                <p className="text-xs text-gray-500 text-right">
+                                    {tone.length}/100 caracteres
+                                </p>
                             </div>
 
                             <div className="space-y-2">
@@ -127,23 +149,64 @@ export default function SettingsPage() {
                                 <Textarea
                                     id="instructions"
                                     value={instructions}
-                                    onChange={(e) => setInstructions(e.target.value)}
+                                    onChange={(e) => {
+                                        const newValue = e.target.value;
+                                        if (newValue.length <= 500) {
+                                            setInstructions(newValue);
+                                        } else {
+                                            alert('Las instrucciones no pueden superar los 500 caracteres');
+                                        }
+                                    }}
                                     placeholder={t("instructionsPlaceholder")}
                                     className="min-h-[120px] rounded-xl border-soft-gray"
+                                    maxLength={500}
                                 />
+                                <p className="text-xs text-gray-500 text-right">
+                                    {instructions.length}/500 caracteres
+                                </p>
                             </div>
 
                             <div className="flex justify-end pt-4">
                                 <Button
                                     type="submit"
                                     disabled={isSaving}
-                                    className="px-8 h-11 rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white shadow-md flex items-center gap-2"
-                                >
+                                    className="px-8 h-11 rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white shadow-md flex items-center gap-2">
                                     <Save className="h-4 w-4" />
                                     {isSaving ? "Guardando..." : t("saveConfig")}
                                 </Button>
                             </div>
                         </form>
+                    </CardContent>
+                </Card>
+
+                {/* Developer Contact Card */}
+                <Card className="rounded-2xl border-amber-200 bg-amber-50/50 shadow-soft">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-neutral-charcoal flex items-center gap-2 text-base">
+                            <Mail className="h-5 w-5 text-amber-600" />
+                            Contacto de soporte técnico
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Si tienes algún problema urgente con las sugerencias de la IA o cualquier otra incidencia técnica, puedes contactar directamente con el equipo de desarrollo:
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <a
+                                href="mailto:amarmol@ujaen.es"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-amber-200 text-sm font-medium text-amber-700 hover:bg-amber-100 transition-colors"
+                            >
+                                <Mail className="h-4 w-4" />
+                                amarmol@ujaen.es
+                            </a>
+                            <a
+                                href="mailto:fsmaroto@ujaen.es"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-amber-200 text-sm font-medium text-amber-700 hover:bg-amber-100 transition-colors"
+                            >
+                                <Mail className="h-4 w-4" />
+                                fsmaroto@ujaen.es
+                            </a>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
