@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback, ChangeEvent } from "react"
+import { useState, useEffect, useMemo, useCallback, ChangeEvent, useRef } from "react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
@@ -109,6 +109,7 @@ export default function PatientStatisticsPage() {
 
   // Compute unique titles for filter
   const uniqueQuestionnaires = Array.from(new Set(questionnaireHistory.map(q => q.questionnaireTitle)))
+  const contentEditableRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (patientId) {
@@ -448,33 +449,30 @@ export default function PatientStatisticsPage() {
 
   // --- Note Handlers ---
   const handleAddNote = async () => {
-    if (!newNoteContent.trim() || !newNoteTitle.trim()) return
+    if (!newNoteContent.trim()) return
+
+    const finalTitle = newNoteTitle.trim() || "Nota sin título"
 
     if (editingNoteId) {
       setPatientNotes(patientNotes.map(note =>
         note.id === editingNoteId
-          ? { ...note, title: newNoteTitle, content: newNoteContent, color: newNoteColor, date: new Date().toISOString().split("T")[0] }
+          ? { ...note, title: finalTitle, content: newNoteContent, color: newNoteColor, date: new Date().toISOString().split("T")[0] }
           : note
       ))
       setEditingNoteId(null)
     } else {
-      if (newNoteTitle && newNoteContent) {
-        const newNote = await api.createNote(patientId, newNoteTitle, newNoteContent, newNoteColor)
-        if (newNote) {
-          setPatientNotes([newNote, ...patientNotes])
-        }
+      const newNote = await api.createNote(patientId, finalTitle, newNoteContent, newNoteColor)
+      if (newNote) {
+        setPatientNotes([newNote, ...patientNotes])
       }
     }
 
     setNewNoteTitle("")
     setNewNoteContent("")
+    if (contentEditableRef.current) {
+      contentEditableRef.current.innerHTML = ""
+    }
     setNewNoteColor("bg-white")
-    // There is no setIsNoteDialogOpen in the current scope based on previous failed edits or view.
-    // Assuming logic was intended to close a dialog that might not exist or variable name is wrong.
-    // Let's remove the unknown setter if it wasn't defined, or check if 'setIsStatDialogOpen' was meant.
-    // Looking at line 120, 'isStatDialogOpen' exists. Line 136 shows notes state but no dialog state shown in snippets.
-    // However, I previously tried to replace 'setIsNoteDialogOpen(false)'.
-    // If it doesn't exist, I should remove it.
   }
 
   const handleEditNote = (note: api.Note) => {
@@ -1366,6 +1364,7 @@ export default function PatientStatisticsPage() {
 
                     <div
                       id="note-editor"
+                      ref={contentEditableRef}
                       contentEditable
                       className="min-h-[120px] p-3 focus:outline-none text-sm leading-relaxed"
                       onInput={(e) => setNewNoteContent(e.currentTarget.innerHTML)}
@@ -1388,7 +1387,7 @@ export default function PatientStatisticsPage() {
                 </div>
                 <Button
                   onClick={handleAddNote}
-                  disabled={!newNoteContent.trim() || !newNoteTitle.trim()}
+                  disabled={!newNoteContent.trim()}
                   className="flex-1 rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white shadow-md"
                 >
                   {editingNoteId && <Save className="h-4 w-4 mr-2" />}

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Camera } from "lucide-react"
+import { Camera, Info, Save } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import * as api from "@/lib/api"
 
@@ -22,6 +22,7 @@ export default function ProfilePage() {
   const [availability, setAvailability] = useState("Lunes-Viernes, 9AM-5PM")
   const [avatarUrl, setAvatarUrl] = useState("")
   const [profileId, setProfileId] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -33,12 +34,6 @@ export default function ProfilePage() {
       setIsAuthenticated(true)
       if (id) {
         setProfileId(id)
-        // Assuming 'api' is defined elsewhere or imported, e.g., from a services file
-        // For example: import * as api from "@/services/api"
-        // This part of the code assumes 'api' is available in scope.
-        // If 'api' is not defined, this will cause a runtime error.
-        // For the purpose of this edit, I'm assuming 'api' is correctly imported/defined.
-        // @ts-ignore - Ignoring potential 'api' not defined error for the sake of applying the diff
         api.getUserProfile(id).then(user => {
           if (user) {
             setName(user.name)
@@ -52,12 +47,15 @@ export default function ProfilePage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (profileId) {
-      // @ts-ignore - Ignoring potential 'api' not defined error for the sake of applying the diff
-      await api.updateUserProfile(profileId, { name, schedule: availability })
-      localStorage.setItem("userName", name) // Update cache
-      // Dispatch event to update sidebar immediately if possible, or just rely on reload
-      window.dispatchEvent(new Event("storage"))
-      alert(t("profileUpdated"))
+      setIsSaving(true)
+      try {
+        await api.updateUserProfile(profileId, { name, schedule: availability })
+        localStorage.setItem("userName", name)
+        window.dispatchEvent(new Event("storage"))
+        alert(t("profileUpdated"))
+      } finally {
+        setIsSaving(false)
+      }
     }
   }
 
@@ -138,12 +136,22 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              {/* Info Message */}
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50 border border-blue-100">
+                <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                <p className="text-sm text-blue-700">
+                  {t("infoMessageProfile")}
+                </p>
+              </div>
+
               <div className="flex justify-end pt-4">
                 <Button
                   type="submit"
+                  disabled={isSaving}
                   className="px-8 h-11 rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white shadow-md"
                 >
-                  {t("save")}
+                  <Save className="h-4 w-4" />
+                  {isSaving ? "Guardando..." : t("saveProfile")}
                 </Button>
               </div>
             </form>

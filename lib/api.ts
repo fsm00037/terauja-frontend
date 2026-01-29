@@ -560,6 +560,27 @@ export async function createQuestionnaire(title: string, icon: string, questions
     }
 }
 
+export async function updateQuestionnaire(id: string, title: string, icon: string, questions: Question[]): Promise<Questionnaire | null> {
+    try {
+        const res = await fetchWithAuth(`${API_URL}/questionnaires/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ title, icon, questions })
+        });
+        if (!res.ok) return null;
+        const q = await res.json();
+        return {
+            id: q.id.toString(),
+            title: q.title,
+            icon: q.icon,
+            questions: q.questions,
+            createdAt: q.created_at
+        };
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
 export async function deleteQuestionnaire(id: string): Promise<boolean> {
     try {
         const res = await fetchWithAuth(`${API_URL}/questionnaires/${id}`, { method: 'DELETE' });

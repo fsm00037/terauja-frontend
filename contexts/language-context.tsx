@@ -111,6 +111,8 @@ const translations = {
     available: "Available",
     unavailable: "Unavailable",
     profileUpdated: "Profile updated successfully!",
+    saveProfile: "Save Profile",
+    infoMessageProfile: "Your patients will see your name and availability updated in their app when you save the changes.",
 
     // Patient View
     yourTherapist: "Your Psychologist",
@@ -291,7 +293,7 @@ const translations = {
     email: "Correo Electrónico",
     password: "Contraseña",
     welcomeBack: "Bienvenido de nuevo, {name}",
-    overviewToday: "Resumen de las tareas pendientes de hoy",
+    overviewToday: "Resumen de las notificaciones recientes",
     loginSubtitle: "Inicia sesión para acceder a tu panel de supervisión",
 
     // Navigation
@@ -376,6 +378,8 @@ const translations = {
     profileUpdated: "Perfil actualizado exitosamente!",
     offline: "Desconectado",
     online: "Conectado",
+    saveProfile: "Guardar Perfil",
+    infoMessageProfile: "Tus pacientes verán tu información actualizada en su aplicación cuando guardes los cambios.",
 
     // Patient View
     yourTherapist: "Tu Psicólogo",
@@ -494,7 +498,7 @@ const translations = {
     // Questionnaires
     questionnaire: "Cuestionario",
     activePeriod: "Periodo Activo",
-    manageQuestionnaires: "Gestionar cestionarios y asignaciones de pacientes",
+    manageQuestionnaires: "Gestionar tus cuestionarios y asignaciones de pacientes",
     questionnaires: "Cuestionarios",
     createQuestionnaire: "Crear Cuestionario",
     selectIcon: "Seleccionar Icono",
