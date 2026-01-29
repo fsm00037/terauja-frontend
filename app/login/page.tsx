@@ -17,8 +17,8 @@ import * as api from "@/lib/api"
 export default function LoginPage() {
   const router = useRouter()
   const { t } = useLanguage()
-  const [email, setEmail] = useState("admin@psicouja.com")
-  const [password, setPassword] = useState("admin")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,7 +78,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@psicouja.com"
+                placeholder="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -106,9 +106,7 @@ export default function LoginPage() {
               {t("login")}
             </Button>
           </form>
-          <p className="text-sm text-center text-muted-foreground mt-6">
-            Credenciales por defecto: admin@psicouja.com / admin
-          </p>
+
         </CardContent>
       </Card>
     </div>
