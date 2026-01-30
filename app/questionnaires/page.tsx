@@ -337,6 +337,34 @@ export default function QuestionnairePage() {
     const handleSaveAssignment = async () => {
         if (!selectedPatient || !selectedQuestionnaire || !startDate || (isRecurrent && !endDate)) return
 
+        // Validate start date
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const start = new Date(startDate)
+        start.setHours(0, 0, 0, 0)
+        if (start < today) {
+            alert("La fecha de inicio no puede ser anterior a hoy")
+            return
+        }
+
+        // Time Check
+        if (!isRecurrent && start.getTime() === today.getTime()) {
+            const activeWindowStart = windowStart
+            if (activeWindowStart) {
+                const now = new Date()
+                const currentHours = now.getHours()
+                const currentMinutes = now.getMinutes()
+
+                const [startHours, startMinutes] = activeWindowStart.split(':').map(Number)
+
+                if (startHours < currentHours || (startHours === currentHours && startMinutes < currentMinutes)) {
+                    alert("La hora de inicio no puede ser anterior a la hora actual para el día de hoy.")
+                    return
+                }
+            }
+        }
+
+
         // Convert window times to UTC for server
         const utcWindowStart = toUTC(windowStart);
         const utcWindowEnd = isRecurrent ? toUTC(windowEnd) : utcWindowStart; // For one-time, start/end times are same concept if used
@@ -723,13 +751,25 @@ export default function QuestionnairePage() {
                                                                 </div>
                                                             </td>
                                                             <td className="px-6 py-4">
-                                                                <div className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold uppercase border ${a.status === 'active'
-                                                                    ? 'bg-green-50 text-green-700 border-green-200'
-                                                                    : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                                                                    }`}>
-                                                                    <span className={`w-1.5 h-1.5 rounded-full mr-1.5 self-center ${a.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`} />
-                                                                    {t(a.status)}
-                                                                </div>
+                                                                {isAssignmentRecurrent ? (
+                                                                    <div className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold uppercase border ${a.status === 'active'
+                                                                        ? 'bg-green-50 text-green-700 border-green-200'
+                                                                        : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                                                        }`}>
+                                                                        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 self-center ${a.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`} />
+                                                                        {t(a.status)}
+                                                                    </div>
+                                                                ) : (
+                                                                    singleCompletion && (
+                                                                        <div className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold uppercase border ${singleCompletion.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
+                                                                            singleCompletion.status === 'missed' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                                                singleCompletion.status === 'sent' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                                                                    'bg-gray-100 text-gray-600 border-gray-200'
+                                                                            }`}>
+                                                                            {t(singleCompletion.status) || singleCompletion.status}
+                                                                        </div>
+                                                                    )
+                                                                )}
                                                             </td>
                                                             <td className="px-6 py-4">
                                                                 {isAssignmentRecurrent ? (
@@ -790,9 +830,14 @@ export default function QuestionnairePage() {
 
                                                                                         if (diffMs < 0) {
                                                                                             return (
-                                                                                                <span className="text-xs text-red-600 font-medium">
-                                                                                                    Vencido
-                                                                                                </span>
+                                                                                                <div className="flex flex-col">
+                                                                                                    <span className="text-xs font-semibold text-neutral-charcoal">
+                                                                                                        {scheduled.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                                    </span>
+                                                                                                    <span className="text-[10px] text-red-600 font-medium">
+                                                                                                        Vencido
+                                                                                                    </span>
+                                                                                                </div>
                                                                                             )
                                                                                         }
 
@@ -811,10 +856,17 @@ export default function QuestionnairePage() {
 
                                                                                         return (
                                                                                             <div className="flex items-center gap-1 group/time">
-                                                                                                <Clock className="h-4 w-4 text-calm-teal" />
-                                                                                                <span className="text-xs text-calm-teal font-medium">
-                                                                                                    {timeRemaining} restantes
-                                                                                                </span>
+                                                                                                <div className="flex flex-col">
+                                                                                                    <span className="text-xs font-semibold text-neutral-charcoal">
+                                                                                                        {scheduled.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                                    </span>
+                                                                                                    <div className="flex items-center gap-1">
+                                                                                                        <Clock className="h-3 w-3 text-calm-teal" />
+                                                                                                        <span className="text-[10px] text-calm-teal font-medium">
+                                                                                                            {timeRemaining}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                </div>
                                                                                                 <Button
                                                                                                     size="icon"
                                                                                                     variant="ghost"
@@ -868,7 +920,7 @@ export default function QuestionnairePage() {
                                                                         <DropdownMenuContent align="end" className="w-[160px] rounded-xl shadow-lg border-gray-100">
                                                                             <DropdownMenuLabel className="text-xs text-muted-foreground">{t("actions")}</DropdownMenuLabel>
 
-                                                                            {a.status !== 'completed' && (
+                                                                            {a.status !== 'completed' && isAssignmentRecurrent && (
                                                                                 <>
                                                                                     <DropdownMenuItem onClick={() => handleToggleStatus(a.id)} className="cursor-pointer">
                                                                                         {a.status === 'active' ? (
@@ -942,7 +994,7 @@ export default function QuestionnairePage() {
                                                                                 <thead className="bg-gray-50 border-b border-gray-200">
                                                                                     <tr>
                                                                                         <th className="px-4 py-3 font-semibold text-gray-500 text-left">Fecha Programada</th>
-                                                                                        <th className="px-4 py-3 font-semibold text-gray-500 text-left">Estado</th>
+                                                                                        <th className="px-4 py-3 font-semibold text-gray-500 text-left">{t('status')}</th>
                                                                                         <th className="px-4 py-3 font-semibold text-gray-500 text-left">Tiempo Restante</th>
                                                                                         <th className="px-4 py-3 font-semibold text-gray-500 text-right">Acciones</th>
                                                                                     </tr>
@@ -1148,7 +1200,23 @@ export default function QuestionnairePage() {
                                             <>
                                                 <div className="space-y-2">
                                                     <Label>Hora</Label>
-                                                    <Input type="time" value={windowStart} onChange={(e) => setWindowStart(e.target.value)} className="rounded-xl" />
+                                                    <div className="flex gap-2">
+                                                        <Input type="time" value={windowStart} onChange={(e) => setWindowStart(e.target.value)} className="rounded-xl" />
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            onClick={() => {
+                                                                const now = new Date()
+                                                                const h = String(now.getHours()).padStart(2, '0')
+                                                                const m = String(now.getMinutes() + 1).padStart(2, '0')
+                                                                setWindowStart(`${h}:${m}`)
+                                                                setStartDate(now.toISOString().split('T')[0])
+                                                            }}
+                                                            className="whitespace-nowrap rounded-xl text-calm-teal hover:text-calm-teal/80 border-calm-teal/30 hover:bg-calm-teal/5"
+                                                        >
+                                                            Enviar Ahora
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label>{t("responseDeadline")} ({t("hours")})</Label>
