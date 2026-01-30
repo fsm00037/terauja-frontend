@@ -56,7 +56,7 @@ const translations = {
     fullName: "Full Name",
     age: "Age",
     contactEmail: "Contact Email",
-    assignedTherapist: "Assigned Therapist",
+    assignedTherapist: "Assigned Psychologist",
     status: "Status",
     active: "Active",
     inactive: "Inactive",
@@ -111,13 +111,15 @@ const translations = {
     available: "Available",
     unavailable: "Unavailable",
     profileUpdated: "Profile updated successfully!",
+    saveProfile: "Save Profile",
+    infoMessageProfile: "Your patients will see your name and availability updated in their app when you save the changes.",
 
     // Patient View
-    yourTherapist: "Your Therapist",
+    yourTherapist: "Your Psychologist",
     therapistAvailable: "Currently Available",
     therapistUnavailable: "Currently Unavailable",
     contactSupport: "For support or inquiries, contact us at",
-    confidentialSpace: "This is a secure and confidential space. Your therapist will review your messages.",
+    confidentialSpace: "This is a secure and confidential space. Your psychologist will review your messages.",
     typeYourMessage: "Type your message...",
     saveNotes: "Save Notes",
 
@@ -137,7 +139,7 @@ const translations = {
     // Messages
     you: "You",
     patient: "Patient",
-    therapist: "Therapist",
+    therapist: "Psychologist",
 
     // Additional translations
     patientId: "Patient ID",
@@ -198,7 +200,7 @@ const translations = {
     viewStatistics: "View Statistics",
     sessionStatistics: "Session Statistics",
     patientMessages: "Patient Messages",
-    therapistMessages: "Therapist Messages",
+    therapistMessages: "Psychologist Messages",
     totalWords: "Total Messages",
     sessionDuration: "Session Duration",
     avgResponseTime: "Avg. Response Time",
@@ -209,11 +211,11 @@ const translations = {
     // Settings
     settings: "Settings",
     aiConfig: "AI Configuration",
-    therapistStyle: "Therapist Style",
+    therapistStyle: "Psychologist Style",
     tone: "Tone",
     additionalInstructions: "Additional Instructions",
     saveConfig: "Save Configuration",
-    aiConfigDesc: "Configure the behavior and personality of the AI therapist assistant.",
+    aiConfigDesc: "Configure the behavior and personality of the AI psychologist assistant.",
     stylePlaceholder: "e.g., CBT, Psychoanalysis, Person-Centered...",
     tonePlaceholder: "e.g., Empathetic, Direct, Professional...",
     instructionsPlaceholder: "Any specific guidelines for the AI to follow...",
@@ -291,7 +293,7 @@ const translations = {
     email: "Correo Electrónico",
     password: "Contraseña",
     welcomeBack: "Bienvenido de nuevo, {name}",
-    overviewToday: "Resumen de las tareas pendientes de hoy",
+    overviewToday: "Resumen de las notificaciones recientes",
     loginSubtitle: "Inicia sesión para acceder a tu panel de supervisión",
 
     // Navigation
@@ -314,7 +316,7 @@ const translations = {
     fullName: "Nombre Completo",
     age: "Edad",
     contactEmail: "Correo de Contacto",
-    assignedTherapist: "Terapeuta Asignado",
+    assignedTherapist: "Psicólogo Asignado",
     status: "Estado",
     active: "Activo",
     inactive: "Inactivo",
@@ -376,13 +378,15 @@ const translations = {
     profileUpdated: "Perfil actualizado exitosamente!",
     offline: "Desconectado",
     online: "Conectado",
+    saveProfile: "Guardar Perfil",
+    infoMessageProfile: "Tus pacientes verán tu información actualizada en su aplicación cuando guardes los cambios.",
 
     // Patient View
-    yourTherapist: "Tu Terapeuta",
+    yourTherapist: "Tu Psicólogo",
     therapistAvailable: "Actualmente Disponible",
     therapistUnavailable: "Actualmente No Disponible",
     contactSupport: "Para soporte o consultas, contáctanos en ",
-    confidentialSpace: "Este es un espacio seguro y confidencial. Tu terapeuta revisará tus mensajes.",
+    confidentialSpace: "Este es un espacio seguro y confidencial. Tu psicólogo revisará tus mensajes.",
     typeYourMessage: "Escribe tu mensaje...",
     saveNotes: "Guardar Notas",
 
@@ -407,7 +411,7 @@ const translations = {
     // Messages
     you: "Tú",
     patient: "Paciente",
-    therapist: "Terapeuta",
+    therapist: "Psicólogo",
 
     // Additional translations
     patientId: "Número de caso",
@@ -466,12 +470,12 @@ const translations = {
     viewStatistics: "Ver Estadísticas",
     sessionStatistics: "Estadísticas de la Sesión",
     patientMessages: "Mensajes del Paciente",
-    therapistMessages: "Mensajes del Terapeuta",
+    therapistMessages: "Mensajes del Psicólogo",
     totalWords: "Total de Mensajes",
     sessionDuration: "Duración de la Sesión",
     words: "palabras",
     patientWords: "Palabras del Paciente",
-    therapistWords: "Palabras del Terapeuta",
+    therapistWords: "Palabras del Psicólogo",
     avgResponseTime: "Tiempo Promedio de Respuesta (Paciente)",
     seconds: "segundos",
     mild: "Leve",
@@ -482,11 +486,11 @@ const translations = {
     // Settings
     settings: "Configuración",
     aiConfig: "Configuración de IA",
-    therapistStyle: "Estilo del Terapeuta",
+    therapistStyle: "Estilo del Psicólogo",
     tone: "Tono",
     additionalInstructions: "Instrucciones Adicionales",
     saveConfig: "Guardar Configuración",
-    aiConfigDesc: "Configura el comportamiento y la personalidad del asistente terapeuta IA.",
+    aiConfigDesc: "Configura el comportamiento y la personalidad del asistente psicólogo IA.",
     stylePlaceholder: "ej. TCC, Psicoanálisis, Centrado en la Persona...",
     tonePlaceholder: "ej. Empático, Directo, Profesional...",
     instructionsPlaceholder: "Cualquier pauta específica para que la IA siga...",
@@ -494,7 +498,7 @@ const translations = {
     // Questionnaires
     questionnaire: "Cuestionario",
     activePeriod: "Periodo Activo",
-    manageQuestionnaires: "Gestionar cestionarios y asignaciones de pacientes",
+    manageQuestionnaires: "Gestionar tus cuestionarios y asignaciones de pacientes",
     questionnaires: "Cuestionarios",
     createQuestionnaire: "Crear Cuestionario",
     selectIcon: "Seleccionar Icono",
