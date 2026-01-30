@@ -141,6 +141,7 @@ export default function QuestionnairePage() {
     const router = useRouter()
     const { t } = useLanguage()
     const [isAuthenticated, setIsAuthenticated] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
 
     // State
     const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([])
@@ -220,6 +221,7 @@ export default function QuestionnairePage() {
                 return dateB - dateA
             }))
         }
+        setIsLoading(false)
     }
 
     // --- Questionnaire Handlers ---
@@ -538,13 +540,13 @@ export default function QuestionnairePage() {
                     </div>
                 </div>
 
-                <Tabs defaultValue="questionnaires" className="w-full">
+                <Tabs defaultValue="assignments" className="w-full">
                     <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl bg-white p-1">
-                        <TabsTrigger value="questionnaires" className="rounded-lg data-[state=active]:bg-calm-teal data-[state=active]:text-white data-[state=active]:shadow-sm">
-                            {t("questionnaires")}
-                        </TabsTrigger>
                         <TabsTrigger value="assignments" className="rounded-lg data-[state=active]:bg-calm-teal data-[state=active]:text-white data-[state=active]:shadow-sm">
                             {t("assignments")}
+                        </TabsTrigger>
+                        <TabsTrigger value="questionnaires" className="rounded-lg data-[state=active]:bg-calm-teal data-[state=active]:text-white data-[state=active]:shadow-sm">
+                            {t("questionnaires")}
                         </TabsTrigger>
                     </TabsList>
 
@@ -668,7 +670,16 @@ export default function QuestionnairePage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {assignments.length === 0 ? (
+                                        {isLoading ? (
+                                            <tr>
+                                                <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-calm-teal"></div>
+                                                        <p>Cargando...</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ) : assignments.filter(a => a.status !== 'completed').length === 0 ? (
                                             <tr>
                                                 <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
                                                     <div className="flex flex-col items-center gap-2">
@@ -906,6 +917,7 @@ export default function QuestionnairePage() {
                                                             </td>
                                                         </tr>
                                                         {isExpanded && (() => {
+
                                                             // Helper function to get week number and year
                                                             const getWeekInfo = (date: Date) => {
                                                                 const firstDayOfYear = new Date(date.getFullYear(), 0, 1)

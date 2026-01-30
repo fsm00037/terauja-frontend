@@ -547,7 +547,7 @@ const translations = {
     resume: "Reanudar",
     completed: "Completado",
     deleteAssignment: "Eliminar Asignación",
-    noAssignments: "No se encontraron asignaciones activas.",
+    noAssignments: "No hay asignaciones",
     assignQuestionnaire: "Asignar Cuestionario",
   },
 }
