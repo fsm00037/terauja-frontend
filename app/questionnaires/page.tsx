@@ -902,6 +902,22 @@ export default function QuestionnairePage() {
                                                                                             </div>
                                                                                         )
                                                                                     })()}
+
+                                                                                    {singleCompletion.status === 'sent' && singleCompletion.scheduledAt && (() => {
+                                                                                        const scheduled = getSafeDate(singleCompletion.scheduledAt)
+                                                                                        return (
+                                                                                            <div className="flex flex-col">
+                                                                                                <div className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                                                                                                    <Calendar className="h-3.5 w-3.5 text-blue-500" />
+                                                                                                    <span>{scheduled.toLocaleDateString()}</span>
+                                                                                                </div>
+                                                                                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                                                                    <Clock className="h-3.5 w-3.5 text-gray-400" />
+                                                                                                    <span>{scheduled.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        )
+                                                                                    })()}
                                                                                 </>
                                                                             )}
                                                                         </div>
