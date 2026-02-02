@@ -1080,6 +1080,11 @@ export default function QuestionnairePage() {
                                                                                                                 }`}>
                                                                                                                 {t(c.status) || c.status}
                                                                                                             </span>
+                                                                                                            {c.isDelayed && (
+                                                                                                                <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                                                                                                    Fuera de plazo
+                                                                                                                </span>
+                                                                                                            )}
                                                                                                         </td>
                                                                                                         <td className="px-4 py-3">
                                                                                                             {c.status === 'pending' && c.scheduledAt && (() => {
@@ -1136,25 +1141,39 @@ export default function QuestionnairePage() {
                                                                                                                 </div>
                                                                                                             ) : (
                                                                                                                 c.status === 'pending' && (
-                                                                                                                    <Button
-                                                                                                                        size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-calm-teal"
-                                                                                                                        onClick={() => {
-                                                                                                                            setEditingCompletionId(c.id)
-                                                                                                                            if (c.scheduledAt) {
-                                                                                                                                const d = getSafeDate(c.scheduledAt)
-                                                                                                                                const year = d.getFullYear()
-                                                                                                                                const month = String(d.getMonth() + 1).padStart(2, '0')
-                                                                                                                                const day = String(d.getDate()).padStart(2, '0')
-                                                                                                                                const hours = String(d.getHours()).padStart(2, '0')
-                                                                                                                                const minutes = String(d.getMinutes()).padStart(2, '0')
-                                                                                                                                setEditDate(`${year}-${month}-${day}`)
-                                                                                                                                setEditTime(`${hours}:${minutes}`)
-                                                                                                                            }
-                                                                                                                        }}
-                                                                                                                    >
-                                                                                                                        <Edit className="h-3 w-3" />
-                                                                                                                    </Button>
+                                                                                                                    <div className="flex items-center justify-end gap-1">
+                                                                                                                        <Button
+                                                                                                                            size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-calm-teal"
+                                                                                                                            onClick={() => {
+                                                                                                                                setEditingCompletionId(c.id)
+                                                                                                                                if (c.scheduledAt) {
+                                                                                                                                    const d = getSafeDate(c.scheduledAt)
+                                                                                                                                    const year = d.getFullYear()
+                                                                                                                                    const month = String(d.getMonth() + 1).padStart(2, '0')
+                                                                                                                                    const day = String(d.getDate()).padStart(2, '0')
+                                                                                                                                    const hours = String(d.getHours()).padStart(2, '0')
+                                                                                                                                    const minutes = String(d.getMinutes()).padStart(2, '0')
+                                                                                                                                    setEditDate(`${year}-${month}-${day}`)
+                                                                                                                                    setEditTime(`${hours}:${minutes}`)
+                                                                                                                                }
+                                                                                                                            }}
+                                                                                                                        >
+                                                                                                                            <Edit className="h-3 w-3" />
+                                                                                                                        </Button>
+                                                                                                                        <Button
+                                                                                                                            size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                                                                                                            onClick={async () => {
+                                                                                                                                if (confirm(t("confirmDeleteQuestionnaire"))) {
+                                                                                                                                    await api.deleteQuestionnaireCompletion(c.id)
+                                                                                                                                    fetchData()
+                                                                                                                                }
+                                                                                                                            }}
+                                                                                                                        >
+                                                                                                                            <Trash2 className="h-3 w-3" />
+                                                                                                                        </Button>
+                                                                                                                    </div>
                                                                                                                 )
+
                                                                                                             )}
                                                                                                         </td>
                                                                                                     </tr>

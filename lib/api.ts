@@ -804,6 +804,16 @@ export async function getQuestionnaireCompletions(patientId: string): Promise<Qu
     }
 }
 
+export async function deleteQuestionnaireCompletion(id: string): Promise<boolean> {
+    try {
+        const res = await fetchWithAuth(`${API_URL}/assignments/completions/${id}`, { method: 'DELETE' });
+        return res.ok;
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+}
+
 // Get assignments for a specific patient (admin view)
 export async function getPatientAssignments(patientId: string): Promise<Assignment[]> {
     try {
