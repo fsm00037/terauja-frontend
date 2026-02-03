@@ -102,6 +102,8 @@ export default function PatientStatisticsPage() {
       maxValue?: number
     }[]
     readByTherapist: boolean
+    isDelayed?: boolean
+    delayTime?: string
   }
 
   const [questionnaireHistory, setQuestionnaireHistory] = useState<AnsweredQuestionnaire[]>([])
@@ -113,31 +115,73 @@ export default function PatientStatisticsPage() {
 
   useEffect(() => {
     if (patientId) {
-      api.getQuestionnaireCompletions(patientId).then((completions) => {
-        // Filter for completed completions with answers
-        const completed = completions.filter(c => c.status === 'completed' && c.answers && c.answers.length > 0)
+      const fetchHistory = () => {
+        api.getQuestionnaireCompletions(patientId).then((completions) => {
+          // Filter for completed completions with answers
+          const completed = completions.filter(c => c.status === 'completed' && c.answers && c.answers.length > 0)
 
-        const history: AnsweredQuestionnaire[] = completed.map(c => ({
-          id: c.id,
-          questionnaireTitle: c.questionnaire?.title || "Cuestionario",
-          icon: c.questionnaire?.icon || "FileQuestion",
-          date: c.completedAt ? new Date(c.completedAt + "Z").toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Fecha desconocida",
-          rawDate: c.completedAt ? new Date(c.completedAt + "Z") : new Date(),
-          time: c.completedAt ? new Date(c.completedAt + "Z").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--",
-          answers: (c.answers || []).map((ans: any, idx: number) => {
-            const qDef = c.questionnaire?.questions?.[idx]
-            return {
-              questionText: ans.question_text || qDef?.text || ans.questionId || "Pregunta",
-              answer: ans.value || ans.answer, // Check both value and answer keys
-              type: ans.type || qDef?.type || "openText",
-              options: ans.options || qDef?.options || [],
-              maxValue: ans.max_value || qDef?.max || 5
-            }
-          }),
-          readByTherapist: (c as any).read_by_therapist || false
-        }))
-        setQuestionnaireHistory(history)
-      })
+          const history: AnsweredQuestionnaire[] = completed.map(c => ({
+            id: c.id,
+            questionnaireTitle: c.questionnaire?.title || "Cuestionario",
+            icon: c.questionnaire?.icon || "FileQuestion",
+            date: c.completedAt ? new Date(c.completedAt).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Fecha desconocida",
+            rawDate: c.completedAt ? new Date(c.completedAt) : new Date(),
+            time: c.completedAt ? new Date(c.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--",
+            answers: (c.answers || []).map((ans: any, idx: number) => {
+              const qDef = c.questionnaire?.questions?.[idx]
+              return {
+                questionText: ans.question_text || qDef?.text || ans.questionId || "Pregunta",
+                answer: ans.value || ans.answer, // Check both value and answer keys
+                type: ans.type || qDef?.type || "openText",
+                options: ans.options || qDef?.options || [],
+                maxValue: ans.max_value || qDef?.max || 5
+              }
+            }),
+            readByTherapist: (c as any).read_by_therapist || false,
+            isDelayed: c.isDelayed,
+            delayTime: (() => {
+              if (c.isDelayed && c.scheduledAt && c.completedAt) {
+                const deadlineHours = c.deadlineHours || 24;
+
+                // scheduledAt is typically UTC from backend (e.g. "2023-01-01T10:00:00")
+                // completedAt is now Local from backend (e.g. "2023-01-01T14:00:00") due to recent changes
+
+                const parseUtc = (d: string) => {
+                  if (d.includes('T') && !d.endsWith('Z') && !d.includes('+') && !d.includes('-')) {
+                    return new Date(d + 'Z').getTime();
+                  }
+                  return new Date(d).getTime();
+                }
+
+                const parseLocal = (d: string) => {
+                  return new Date(d).getTime();
+                }
+
+                const scheduledTime = parseUtc(c.scheduledAt);
+                const completedTime = parseLocal(c.completedAt);
+
+                const deadlineTime = scheduledTime + (deadlineHours * 60 * 60 * 1000);
+
+                const diffMs = completedTime - deadlineTime;
+
+                if (diffMs > 0) {
+                  const diffMins = Math.floor(diffMs / 60000);
+                  const hours = Math.floor(diffMins / 60);
+                  const minutes = diffMins % 60;
+                  if (hours > 0) return `${hours}h ${minutes}m`;
+                  return `${minutes}m`;
+                }
+              }
+              return undefined;
+            })()
+          }))
+          setQuestionnaireHistory(history)
+        })
+      }
+
+      fetchHistory()
+      const interval = setInterval(fetchHistory, 60000)
+      return () => clearInterval(interval)
     }
   }, [patientId])
 
@@ -1637,6 +1681,12 @@ export default function PatientStatisticsPage() {
                                               <span className="font-medium">{item.time}</span>
                                             </div>
                                             <span className="bg-gray-50 px-2 py-1 rounded-md border border-gray-100 font-medium">{item.answers.length} {item.answers.length === 1 ? t("question") : t("questions")}</span>
+                                            {item.isDelayed && (
+                                              <div className="flex items-center gap-1.5 bg-amber-50 px-2 py-1 rounded-md border border-amber-100 text-amber-700">
+                                                <Clock className="h-3.5 w-3.5" />
+                                                <span className="font-medium text-xs">Con retraso {item.delayTime ? `(${item.delayTime})` : ''}</span>
+                                              </div>
+                                            )}
                                           </div>
                                         </div>
 
