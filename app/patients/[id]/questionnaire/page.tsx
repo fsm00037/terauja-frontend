@@ -108,6 +108,7 @@ export default function PatientQuestionnairePage() {
             const title = c.questionnaire?.title || "Cuestionario";
             const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase())
 
+            if (!c.completedAt) return matchesSearch;
             const completionDate = new Date(c.completedAt)
             if (isNaN(completionDate.getTime())) return matchesSearch;
 
@@ -275,18 +276,18 @@ export default function PatientQuestionnairePage() {
                                                     {completion.isDelayed && (
                                                         <Badge variant="destructive" className="bg-soft-coral/10 text-soft-coral border-soft-coral/20 font-medium py-0 px-2 flex items-center gap-1">
                                                             <AlertCircle className="h-3 w-3" />
-                                                            Retraso
+                                                            Fuera de plazo
                                                         </Badge>
                                                     )}
                                                 </div>
                                                 <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-muted-foreground font-medium">
                                                     <div className="flex items-center gap-1.5">
                                                         <Calendar className="h-3 w-3" />
-                                                        <span>{new Date(completion.completedAt).toLocaleDateString()}</span>
+                                                        <span>{completion.completedAt ? new Date(completion.completedAt).toLocaleDateString() : '-'}</span>
                                                     </div>
                                                     <div className="flex items-center gap-1.5">
                                                         <Clock className="h-3 w-3" />
-                                                        <span>{new Date(completion.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        <span>{completion.completedAt ? new Date(completion.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
                                                     </div>
                                                     {completion.scheduledAt && (
                                                         <div className="flex items-center gap-1.5 text-muted-foreground/60 italic">
@@ -300,7 +301,7 @@ export default function PatientQuestionnairePage() {
 
                                             <div className="shrink-0 flex items-center gap-4">
                                                 <Badge variant="secondary" className="bg-calm-teal/5 text-calm-teal hover:bg-calm-teal/10 border-transparent">
-                                                    {completion.answers.length} respuestas
+                                                    {completion.answers?.length || 0} respuestas
                                                 </Badge>
                                                 {expandedIds.has(completion.id) ? (
                                                     <ChevronUp className="h-5 w-5 text-calm-teal" />
@@ -314,7 +315,7 @@ export default function PatientQuestionnairePage() {
                                         {expandedIds.has(completion.id) && (
                                             <div className="px-5 pb-5 pt-0 animate-in slide-in-from-top-2">
                                                 <div className="bg-muted/30 rounded-2xl p-4 md:p-6 border border-soft-gray/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    {completion.answers.map((answer: any, idx: number) => (
+                                                    {completion.answers?.map((answer: any, idx: number) => (
                                                         <div key={idx} className="bg-white/80 p-4 rounded-xl border border-soft-gray/30 shadow-sm">
                                                             <p className="text-xs font-bold text-calm-teal uppercase tracking-wider mb-2 flex items-center gap-2">
                                                                 <span className="h-4 w-4 rounded-full bg-calm-teal text-white flex items-center justify-center text-[10px]">{idx + 1}</span>
