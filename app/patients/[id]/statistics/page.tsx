@@ -143,15 +143,22 @@ export default function PatientStatisticsPage() {
               if (c.isDelayed && c.scheduledAt && c.completedAt) {
                 const deadlineHours = c.deadlineHours || 24;
 
-                const parseDate = (d: string) => {
-                  // Normalize to ensure consistent parsing behavior
-                  // If backend sends mixed formats (one with Z, one without), this might need adjustment.
-                  // But assuming consistent naive or consistent aware:
+                // Scheduled is "Patient Local Time" (e.g. 09:00 on their clock)
+                const parseLocal = (d: string) => {
                   return new Date(d).getTime();
                 }
 
-                const scheduledTime = parseDate(c.scheduledAt);
-                const completedTime = parseDate(c.completedAt);
+                // Completed is "Server Time" (UTC in production), sent as naive string
+                const parseUtc = (d: string) => {
+                  // Ensure we treat it as UTC
+                  if (d.includes('T') && !d.endsWith('Z') && !d.includes('+') && !d.includes('-')) {
+                    return new Date(d + 'Z').getTime();
+                  }
+                  return new Date(d).getTime();
+                }
+
+                const scheduledTime = parseLocal(c.scheduledAt);
+                const completedTime = parseUtc(c.completedAt);
 
                 const deadlineTime = scheduledTime + (deadlineHours * 60 * 60 * 1000);
 
