@@ -273,7 +273,7 @@ export default function PatientQuestionnairePage() {
                                                     <h3 className="font-semibold text-neutral-charcoal">
                                                         {completion.questionnaire?.title || 'Cuestionario'}
                                                     </h3>
-                                                    {completion.isDelayed && (
+                                                    {(completion.isDelayed || (completion.completedAt && completion.scheduledAt && completion.deadlineHours && new Date(completion.completedAt).getTime() > new Date(completion.scheduledAt).getTime() + (completion.deadlineHours * 60 * 60 * 1000))) && (
                                                         <Badge variant="destructive" className="bg-soft-coral/10 text-soft-coral border-soft-coral/20 font-medium py-0 px-2 flex items-center gap-1">
                                                             <AlertCircle className="h-3 w-3" />
                                                             Fuera de plazo

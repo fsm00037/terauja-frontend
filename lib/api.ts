@@ -770,6 +770,7 @@ export interface QuestionnaireCompletion {
     completedAt?: string
     status: "pending" | "completed" | "missed" | "sent"
     isDelayed: boolean
+    deadlineHours?: number
     questionnaire?: {
         title: string
         icon: string
@@ -792,6 +793,7 @@ export async function getQuestionnaireCompletions(patientId: string): Promise<Qu
             completedAt: c.completed_at,
             status: c.status,
             isDelayed: c.is_delayed,
+            deadlineHours: c.deadline_hours,
             questionnaire: c.questionnaire ? {
                 title: c.questionnaire.title,
                 icon: c.questionnaire.icon || "FileQuestion",
