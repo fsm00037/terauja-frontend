@@ -143,22 +143,15 @@ export default function PatientStatisticsPage() {
               if (c.isDelayed && c.scheduledAt && c.completedAt) {
                 const deadlineHours = c.deadlineHours || 24;
 
-                // scheduledAt is typically UTC from backend (e.g. "2023-01-01T10:00:00")
-                // completedAt is now Local from backend (e.g. "2023-01-01T14:00:00") due to recent changes
-
-                const parseUtc = (d: string) => {
-                  if (d.includes('T') && !d.endsWith('Z') && !d.includes('+') && !d.includes('-')) {
-                    return new Date(d + 'Z').getTime();
-                  }
+                const parseDate = (d: string) => {
+                  // Normalize to ensure consistent parsing behavior
+                  // If backend sends mixed formats (one with Z, one without), this might need adjustment.
+                  // But assuming consistent naive or consistent aware:
                   return new Date(d).getTime();
                 }
 
-                const parseLocal = (d: string) => {
-                  return new Date(d).getTime();
-                }
-
-                const scheduledTime = parseUtc(c.scheduledAt);
-                const completedTime = parseLocal(c.completedAt);
+                const scheduledTime = parseDate(c.scheduledAt);
+                const completedTime = parseDate(c.completedAt);
 
                 const deadlineTime = scheduledTime + (deadlineHours * 60 * 60 * 1000);
 
