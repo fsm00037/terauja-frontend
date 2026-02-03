@@ -120,13 +120,20 @@ export default function PatientStatisticsPage() {
           // Filter for completed completions with answers
           const completed = completions.filter(c => c.status === 'completed' && c.answers && c.answers.length > 0)
 
+          const parseUtc = (d: string) => {
+            if (d.includes('T') && !d.endsWith('Z') && !d.includes('+') && !d.includes('-')) {
+              return new Date(d + 'Z');
+            }
+            return new Date(d);
+          }
+
           const history: AnsweredQuestionnaire[] = completed.map(c => ({
             id: c.id,
             questionnaireTitle: c.questionnaire?.title || "Cuestionario",
             icon: c.questionnaire?.icon || "FileQuestion",
-            date: c.completedAt ? new Date(c.completedAt).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Fecha desconocida",
-            rawDate: c.completedAt ? new Date(c.completedAt) : new Date(),
-            time: c.completedAt ? new Date(c.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--",
+            date: c.completedAt ? parseUtc(c.completedAt).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Fecha desconocida",
+            rawDate: c.completedAt ? parseUtc(c.completedAt) : new Date(),
+            time: c.completedAt ? parseUtc(c.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--",
             answers: (c.answers || []).map((ans: any, idx: number) => {
               const qDef = c.questionnaire?.questions?.[idx]
               return {
