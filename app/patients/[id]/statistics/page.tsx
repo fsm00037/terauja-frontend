@@ -121,14 +121,17 @@ export default function PatientStatisticsPage() {
           const completed = completions.filter(c => c.status === 'completed' && c.answers && c.answers.length > 0)
 
           const parseUtc = (d: string) => {
+            // Normalize space to T just in case backend sends "YYYY-MM-DD HH:MM:SS"
+            const normalized = d.replace(' ', 'T');
+
             // If it looks like an ISO string but has no timezone info (Z, +, - after time part), treat as UTC
             // Standard ISO date contains dashes (YYYY-MM-DD), so we shouldn't check !d.includes('-') globally
             // We check if it ends with Z or has a timezone offset
-            const hasTimezone = d.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(d);
-            if (d.includes('T') && !hasTimezone) {
-              return new Date(d + 'Z');
+            const hasTimezone = normalized.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(normalized);
+            if (normalized.includes('T') && !hasTimezone) {
+              return new Date(normalized + 'Z');
             }
-            return new Date(d);
+            return new Date(normalized);
           }
 
           const history: AnsweredQuestionnaire[] = completed.map(c => ({
@@ -161,12 +164,15 @@ export default function PatientStatisticsPage() {
 
                 // Completed is "Server Time" (UTC in production), sent as naive string
                 const parseUtc = (d: string) => {
+                  // Normalize space to T just in case backend sends "YYYY-MM-DD HH:MM:SS"
+                  const normalized = d.replace(' ', 'T');
+
                   // Ensure we treat it as UTC
-                  const hasTimezone = d.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(d);
-                  if (d.includes('T') && !hasTimezone) {
-                    return new Date(d + 'Z').getTime();
+                  const hasTimezone = normalized.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(normalized);
+                  if (normalized.includes('T') && !hasTimezone) {
+                    return new Date(normalized + 'Z').getTime();
                   }
-                  return new Date(d).getTime();
+                  return new Date(normalized).getTime();
                 }
 
                 const scheduledTime = parseLocal(c.scheduledAt);
