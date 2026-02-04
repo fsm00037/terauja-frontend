@@ -121,17 +121,14 @@ export default function PatientStatisticsPage() {
           const completed = completions.filter(c => c.status === 'completed' && c.answers && c.answers.length > 0)
 
           const parseUtc = (d: string) => {
-            // Normalize space to T just in case backend sends "YYYY-MM-DD HH:MM:SS"
-            const normalized = d.replace(' ', 'T');
-
             // If it looks like an ISO string but has no timezone info (Z, +, - after time part), treat as UTC
             // Standard ISO date contains dashes (YYYY-MM-DD), so we shouldn't check !d.includes('-') globally
             // We check if it ends with Z or has a timezone offset
-            const hasTimezone = normalized.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(normalized);
-            if (normalized.includes('T') && !hasTimezone) {
-              return new Date(normalized + 'Z');
+            const hasTimezone = d.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(d);
+            if (d.includes('T') && !hasTimezone) {
+              return new Date(d + 'Z');
             }
-            return new Date(normalized);
+            return new Date(d);
           }
 
           const history: AnsweredQuestionnaire[] = completed.map(c => ({
@@ -152,9 +149,9 @@ export default function PatientStatisticsPage() {
               }
             }),
             readByTherapist: (c as any).read_by_therapist || false,
-            isDelayed: c.isDelayed,
-            delayTime: (() => {
-              if (c.isDelayed && c.scheduledAt && c.completedAt) {
+            // Calculate delayed status locally to avoid backend timezone issues
+            ...(function () {
+              if (c.scheduledAt && c.completedAt) {
                 const deadlineHours = c.deadlineHours || 24;
 
                 // Scheduled is "Patient Local Time" (e.g. 09:00 on their clock)
@@ -162,17 +159,14 @@ export default function PatientStatisticsPage() {
                   return new Date(d).getTime();
                 }
 
-                // Completed is "Server Time" (UTC in production), sent as naive string
+                // Completed is "Server Time" (UTC in production)
+                // We use the same fixed logic as above
                 const parseUtc = (d: string) => {
-                  // Normalize space to T just in case backend sends "YYYY-MM-DD HH:MM:SS"
-                  const normalized = d.replace(' ', 'T');
-
-                  // Ensure we treat it as UTC
-                  const hasTimezone = normalized.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(normalized);
-                  if (normalized.includes('T') && !hasTimezone) {
-                    return new Date(normalized + 'Z').getTime();
+                  const hasTimezone = d.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(d);
+                  if (d.includes('T') && !hasTimezone) {
+                    return new Date(d + 'Z').getTime();
                   }
-                  return new Date(normalized).getTime();
+                  return new Date(d).getTime();
                 }
 
                 const scheduledTime = parseLocal(c.scheduledAt);
@@ -186,11 +180,18 @@ export default function PatientStatisticsPage() {
                   const diffMins = Math.floor(diffMs / 60000);
                   const hours = Math.floor(diffMins / 60);
                   const minutes = diffMins % 60;
-                  if (hours > 0) return `${hours}h ${minutes}m`;
-                  return `${minutes}m`;
+                  const delayStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+                  return {
+                    isDelayed: true,
+                    delayTime: delayStr
+                  };
                 }
               }
-              return undefined;
+              return {
+                isDelayed: false,
+                delayTime: undefined
+              };
             })()
           }))
           setQuestionnaireHistory(history)
