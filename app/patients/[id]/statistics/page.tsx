@@ -121,7 +121,11 @@ export default function PatientStatisticsPage() {
           const completed = completions.filter(c => c.status === 'completed' && c.answers && c.answers.length > 0)
 
           const parseUtc = (d: string) => {
-            if (d.includes('T') && !d.endsWith('Z') && !d.includes('+') && !d.includes('-')) {
+            // If it looks like an ISO string but has no timezone info (Z, +, - after time part), treat as UTC
+            // Standard ISO date contains dashes (YYYY-MM-DD), so we shouldn't check !d.includes('-') globally
+            // We check if it ends with Z or has a timezone offset
+            const hasTimezone = d.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(d);
+            if (d.includes('T') && !hasTimezone) {
               return new Date(d + 'Z');
             }
             return new Date(d);
@@ -158,7 +162,8 @@ export default function PatientStatisticsPage() {
                 // Completed is "Server Time" (UTC in production), sent as naive string
                 const parseUtc = (d: string) => {
                   // Ensure we treat it as UTC
-                  if (d.includes('T') && !d.endsWith('Z') && !d.includes('+') && !d.includes('-')) {
+                  const hasTimezone = d.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(d);
+                  if (d.includes('T') && !hasTimezone) {
                     return new Date(d + 'Z').getTime();
                   }
                   return new Date(d).getTime();
