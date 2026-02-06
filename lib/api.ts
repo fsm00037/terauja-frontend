@@ -784,6 +784,7 @@ export interface QuestionnaireCompletion {
     completedAt?: string
     status: "pending" | "completed" | "missed" | "sent"
     isDelayed: boolean
+    deadlineHours?: number
     questionnaire?: {
         title: string
         icon: string
@@ -806,6 +807,7 @@ export async function getQuestionnaireCompletions(patientId: string): Promise<Qu
             completedAt: c.completed_at,
             status: c.status,
             isDelayed: c.is_delayed,
+            deadlineHours: c.deadline_hours,
             questionnaire: c.questionnaire ? {
                 title: c.questionnaire.title,
                 icon: c.questionnaire.icon || "FileQuestion",
@@ -815,6 +817,16 @@ export async function getQuestionnaireCompletions(patientId: string): Promise<Qu
     } catch (e) {
         console.error(e);
         return [];
+    }
+}
+
+export async function deleteQuestionnaireCompletion(id: string): Promise<boolean> {
+    try {
+        const res = await fetchWithAuth(`${API_URL}/assignments/completions/${id}`, { method: 'DELETE' });
+        return res.ok;
+    } catch (e) {
+        console.error(e);
+        return false;
     }
 }
 

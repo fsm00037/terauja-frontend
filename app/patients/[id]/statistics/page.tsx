@@ -46,6 +46,7 @@ import {
   RefreshCw,
   Key,
   Copy,
+  Download,
 } from "lucide-react"
 import { ChatTranscript } from "@/components/chat-transcript"
 import { useLanguage } from "@/contexts/language-context"
@@ -105,6 +106,8 @@ export default function PatientStatisticsPage() {
       maxValue?: number
     }[]
     readByTherapist: boolean
+    isDelayed?: boolean
+    delayTime?: string
   }
 
   const [questionnaireHistory, setQuestionnaireHistory] = useState<AnsweredQuestionnaire[]>([])
@@ -116,31 +119,92 @@ export default function PatientStatisticsPage() {
 
   useEffect(() => {
     if (patientId) {
-      api.getQuestionnaireCompletions(patientId).then((completions) => {
-        // Filter for completed completions with answers
-        const completed = completions.filter(c => c.status === 'completed' && c.answers && c.answers.length > 0)
+      const fetchHistory = () => {
+        api.getQuestionnaireCompletions(patientId).then((completions) => {
+          // Filter for completed completions with answers
+          const completed = completions.filter(c => c.status === 'completed' && c.answers && c.answers.length > 0)
 
-        const history: AnsweredQuestionnaire[] = completed.map(c => ({
-          id: c.id,
-          questionnaireTitle: c.questionnaire?.title || "Cuestionario",
-          icon: c.questionnaire?.icon || "FileQuestion",
-          date: c.completedAt ? new Date(c.completedAt + "Z").toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Fecha desconocida",
-          rawDate: c.completedAt ? new Date(c.completedAt + "Z") : new Date(),
-          time: c.completedAt ? new Date(c.completedAt + "Z").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--",
-          answers: (c.answers || []).map((ans: any, idx: number) => {
-            const qDef = c.questionnaire?.questions?.[idx]
-            return {
-              questionText: ans.question_text || qDef?.text || ans.questionId || "Pregunta",
-              answer: ans.value || ans.answer, // Check both value and answer keys
-              type: ans.type || qDef?.type || "openText",
-              options: ans.options || qDef?.options || [],
-              maxValue: ans.max_value || qDef?.max || 5
+          const parseUtc = (d: string) => {
+            // If it looks like an ISO string but has no timezone info (Z, +, - after time part), treat as UTC
+            // Standard ISO date contains dashes (YYYY-MM-DD), so we shouldn't check !d.includes('-') globally
+            // We check if it ends with Z or has a timezone offset
+            const hasTimezone = d.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(d);
+            if (d.includes('T') && !hasTimezone) {
+              return new Date(d + 'Z');
             }
-          }),
-          readByTherapist: (c as any).read_by_therapist || false
-        }))
-        setQuestionnaireHistory(history)
-      })
+            return new Date(d);
+          }
+
+          const history: AnsweredQuestionnaire[] = completed.map(c => ({
+            id: c.id,
+            questionnaireTitle: c.questionnaire?.title || "Cuestionario",
+            icon: c.questionnaire?.icon || "FileQuestion",
+            date: c.completedAt ? parseUtc(c.completedAt).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "Fecha desconocida",
+            rawDate: c.completedAt ? parseUtc(c.completedAt) : new Date(),
+            time: c.completedAt ? parseUtc(c.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--",
+            answers: (c.answers || []).map((ans: any, idx: number) => {
+              const qDef = c.questionnaire?.questions?.[idx]
+              return {
+                questionText: ans.question_text || qDef?.text || ans.questionId || "Pregunta",
+                answer: ans.value || ans.answer, // Check both value and answer keys
+                type: ans.type || qDef?.type || "openText",
+                options: ans.options || qDef?.options || [],
+                maxValue: ans.max_value || qDef?.max || 5
+              }
+            }),
+            readByTherapist: (c as any).read_by_therapist || false,
+            // Calculate delayed status locally to avoid backend timezone issues
+            ...(function () {
+              if (c.scheduledAt && c.completedAt) {
+                const deadlineHours = c.deadlineHours || 24;
+
+                // Scheduled is "Patient Local Time" (e.g. 09:00 on their clock)
+                const parseLocal = (d: string) => {
+                  return new Date(d).getTime();
+                }
+
+                // Completed is "Server Time" (UTC in production)
+                // We use the same fixed logic as above
+                const parseUtc = (d: string) => {
+                  const hasTimezone = d.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(d);
+                  if (d.includes('T') && !hasTimezone) {
+                    return new Date(d + 'Z').getTime();
+                  }
+                  return new Date(d).getTime();
+                }
+
+                const scheduledTime = parseLocal(c.scheduledAt);
+                const completedTime = parseUtc(c.completedAt);
+
+                const deadlineTime = scheduledTime + (deadlineHours * 60 * 60 * 1000);
+
+                const diffMs = completedTime - deadlineTime;
+
+                if (diffMs > 0) {
+                  const diffMins = Math.floor(diffMs / 60000);
+                  const hours = Math.floor(diffMins / 60);
+                  const minutes = diffMins % 60;
+                  const delayStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+                  return {
+                    isDelayed: true,
+                    delayTime: delayStr
+                  };
+                }
+              }
+              return {
+                isDelayed: false,
+                delayTime: undefined
+              };
+            })()
+          }))
+          setQuestionnaireHistory(history)
+        })
+      }
+
+      fetchHistory()
+      const interval = setInterval(fetchHistory, 60000)
+      return () => clearInterval(interval)
     }
   }, [patientId])
 
@@ -213,6 +277,85 @@ export default function PatientStatisticsPage() {
         }
       }
     }
+  }
+
+  const handleDownloadCSV = () => {
+    if (questionnaireHistory.length === 0) {
+      toast({
+        title: "No hay datos",
+        description: "No hay cuestionarios para descargar.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Define CSV headers
+    const headers = [
+      "ID",
+      "Fecha",
+      "Hora",
+      "Cuestionario",
+      "Pregunta",
+      "Respuesta",
+      "Valor Máximo",
+      "Completado con retraso",
+      "Tiempo de retraso"
+    ]
+
+    // Initialize rows with headers
+    const rows: (string | number)[][] = [headers]
+
+    // Filter based on current selection if needed, or download all?
+    // Let's download currently filtered view to match user expectation, or all if "all" is selected.
+    const dataToDownload = questionnaireHistory
+      .filter(item => questionnaireFilter === "all" || item.questionnaireTitle === questionnaireFilter)
+      .sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime())
+
+    if (dataToDownload.length === 0) {
+      toast({
+        title: "No hay datos filtrados",
+        description: "No hay cuestionarios que coincidan con el filtro actual.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    dataToDownload.forEach(q => {
+      q.answers.forEach(ans => {
+        const row = [
+          q.id,
+          q.date,
+          q.time,
+          `"${q.questionnaireTitle.replace(/"/g, '""')}"`, // Escape quotes
+          `"${ans.questionText.replace(/"/g, '""')}"`,
+          `"${String(ans.answer).replace(/"/g, '""')}"`,
+          ans.maxValue || 5, // Default scalar
+          q.isDelayed ? "Sí" : "No",
+          q.delayTime || "-"
+        ]
+        rows.push(row)
+      })
+    })
+
+    // Convert to CSV string with BOM for Excel compatibility
+    const csvContent = "\uFEFF" + rows.map(e => e.join(",")).join("\n")
+
+    // Create download link
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.setAttribute("href", url)
+
+    // User requested filename to be the case number + questionnaire type
+    const caseNumber = patient?.patientCode || patientId || "paciente"
+    const typeSuffix = questionnaireFilter === "all" ? "Todos" : questionnaireFilter
+    const fileName = `${caseNumber}_${typeSuffix}`.replace(/ /g, "_") // Replace spaces with underscores for safer filenames
+
+    link.setAttribute("download", `${fileName}.csv`)
+
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   // --- Assessment Stats State ---
@@ -1510,8 +1653,17 @@ export default function PatientStatisticsPage() {
           <Card className="rounded-2xl border-soft-gray shadow-soft">
             <CardHeader>
               <div className="flex items-center gap-3 justify-between w-full">
-                <div>
+                <div className="flex items-center gap-4">
                   <CardTitle className="text-neutral-charcoal">{t("questionnaires")}</CardTitle>
+                  <Button
+                    onClick={handleDownloadCSV}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl border-soft-gray text-calm-teal hover:text-calm-teal/80 hover:bg-calm-teal/5"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Descargar CSV
+                  </Button>
                 </div>
                 <div className="w-[200px]">
                   <Select value={questionnaireFilter} onValueChange={setQuestionnaireFilter}>
@@ -1699,6 +1851,12 @@ export default function PatientStatisticsPage() {
                                               <span className="font-medium">{item.time}</span>
                                             </div>
                                             <span className="bg-gray-50 px-2 py-1 rounded-md border border-gray-100 font-medium">{item.answers.length} {item.answers.length === 1 ? t("question") : t("questions")}</span>
+                                            {item.isDelayed && (
+                                              <div className="flex items-center gap-1.5 bg-amber-50 px-2 py-1 rounded-md border border-amber-100 text-amber-700">
+                                                <Clock className="h-3.5 w-3.5" />
+                                                <span className="font-medium text-xs">Con retraso {item.delayTime ? `(${item.delayTime})` : ''}</span>
+                                              </div>
+                                            )}
                                           </div>
                                         </div>
 
