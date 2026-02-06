@@ -98,24 +98,16 @@ export default function SettingsPage() {
                                 <Label htmlFor="style" className="text-sm font-medium text-neutral-charcoal">
                                     {t("therapistStyle")}
                                 </Label>
-                                <Input
+                                <select
                                     id="style"
                                     value={style}
-                                    onChange={(e) => {
-                                        const newValue = e.target.value;
-                                        if (newValue.length <= 100) {
-                                            setStyle(newValue);
-                                        } else {
-                                            alert('El estilo no puede superar los 100 caracteres');
-                                        }
-                                    }}
-                                    placeholder={t("stylePlaceholder")}
-                                    className="h-11 rounded-xl border-soft-gray"
-                                    maxLength={100}
-                                />
-                                <p className="text-xs text-gray-500 text-right">
-                                    {style.length}/100 caracteres
-                                </p>
+                                    onChange={(e) => setStyle(e.target.value)}
+                                    className="h-11 w-full rounded-xl border border-soft-gray px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value=""></option>
+                                    <option value="ACT">ACT (Terapia de Aceptación y Compromiso)</option>
+                                    <option value="CBT">TCC (Terapia Cognitivo-Conductual)</option>
+                                </select>
                             </div>
 
                             <div className="space-y-2">

@@ -122,6 +122,11 @@ const translations = {
     confidentialSpace: "This is a secure and confidential space. Your psychologist will review your messages.",
     typeYourMessage: "Type your message...",
     saveNotes: "Save Notes",
+    confirmRegenerateCode: "Are you sure? This will generate a new access code and invalidate all existing sessions for this patient",
+    codeRegenerated: "Code Regenerated",
+    newCode: "New Code",
+    errorRegeneratingCode: "Failed to regenerate code",
+    generateNewCode: "Generate New Code",
 
     // Session View
     sessionDetails: "Session Details",
@@ -389,6 +394,11 @@ const translations = {
     confidentialSpace: "Este es un espacio seguro y confidencial. Tu psicólogo revisará tus mensajes.",
     typeYourMessage: "Escribe tu mensaje...",
     saveNotes: "Guardar Notas",
+    confirmRegenerateCode: "¿Estás seguro? Generar un nuevo código invalidará todas las sesiones existentes para este paciente",
+    codeRegenerated: "Código regenerado exitosamente!",
+    newCode: "Nuevo código",
+    errorRegeneratingCode: "Error al regenerar código",
+    generateNewCode: "Generar nuevo código",
 
     // Session View
     sessionDetails: "Detalles de la Sesión",

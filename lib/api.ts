@@ -215,6 +215,20 @@ export async function deletePatient(id: string): Promise<boolean> {
     }
 }
 
+export async function regeneratePatientCode(patientId: string): Promise<string | null> {
+    try {
+        const res = await fetchWithAuth(`${API_URL}/patients/${patientId}/regenerate-code`, {
+            method: 'POST'
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.access_code;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
 
 export interface Note {
     id: string;
