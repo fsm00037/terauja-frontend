@@ -99,6 +99,16 @@ export default function LoginPage() {
                 className="h-11 rounded-xl border-soft-gray focus:border-calm-teal focus:ring-calm-teal"
               />
             </div>
+            <div className="flex justify-end">
+              <Button
+                variant="link"
+                className="px-0 font-normal h-auto text-calm-teal hover:no-underline hover:text-calm-teal/80"
+                onClick={() => router.push("/forgot-password")}
+                type="button"
+              >
+                {t("forgotPassword")}
+              </Button>
+            </div>
             <Button
               type="submit"
               className="w-full h-11 rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white font-medium shadow-md mt-6"
