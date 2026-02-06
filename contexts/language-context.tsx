@@ -1,5 +1,6 @@
 "use client"
 
+import { forgotPassword } from "@/lib/api"
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 
@@ -33,6 +34,14 @@ const translations = {
     password: "Password",
     welcomeBack: "Welcome back, {name}",
     loginSubtitle: "Login to access your supervision dashboard",
+    recoverPassword: "Recover Password",
+    enterEmailToRecover: "Enter your email to recover your password",
+    forgotPassword: "Forgot Password",
+    sendRecoveryLink: "Send Recovery Link",
+    backToLogin: "Back to Login",
+    checkEmail: "Check your email for a recovery link",
+    recoveryLinkSent: "Recovery link sent",
+
 
     // Navigation
     dashboard: "Dashboard",
@@ -224,6 +233,16 @@ const translations = {
     stylePlaceholder: "e.g., CBT, Psychoanalysis, Person-Centered...",
     tonePlaceholder: "e.g., Empathetic, Direct, Professional...",
     instructionsPlaceholder: "Any specific guidelines for the AI to follow...",
+    updatePassword: "Update Password",
+    currentPassword: "Current Password",
+    newPassword: "New Password",
+    confirmPassword: "Confirm Password",
+    passwordChanged: "Password Changed",
+    passwordTooShort: "Password must be at least 8 characters long.",
+    passwordsDoNotMatch: "Passwords do not match.",
+    passwordChangeError: "Failed to change password. Please try again.",
+    security: "Security",
+
 
     // Questionnaires
     questionnaire: "Questionnaire",
@@ -300,6 +319,13 @@ const translations = {
     welcomeBack: "Bienvenido de nuevo, {name}",
     overviewToday: "Resumen de las notificaciones recientes",
     loginSubtitle: "Inicia sesión para acceder a tu panel de supervisión",
+    recoverPassword: "Recuperar Contraseña",
+    enterEmailToRecover: "Introduce tu correo electrónico para recuperar tu contraseña",
+    forgotPassword: "¿Olvidaste tu contraseña?",
+    sendRecoveryLink: "Enviar enlace de recuperación",
+    backToLogin: "Volver a Iniciar Sesión",
+    checkEmail: "Revisa tu correo electrónico",
+    recoveryLinkSent: "Enlace de recuperación enviado",
 
     // Navigation
     dashboard: "Panel",
@@ -504,6 +530,17 @@ const translations = {
     stylePlaceholder: "ej. TCC, Psicoanálisis, Centrado en la Persona...",
     tonePlaceholder: "ej. Empático, Directo, Profesional...",
     instructionsPlaceholder: "Cualquier pauta específica para que la IA siga...",
+    currentPassword: "Contraseña Actual",
+    newPassword: "Nueva Contraseña",
+    confirmPassword: "Confirmar Contraseña",
+    changePassword: "Cambiar Contraseña",
+    changePasswordDesc: "Cambia tu contraseña para mayor seguridad.",
+    updatePassword: "Actualizar Contraseña",
+    passwordChanged: "Contraseña Actualizada",
+    passwordTooShort: "Contraseña demasiado corta. Debe tener al menos 8 caracteres.",
+    passwordsDoNotMatch: "Las contraseñas no coinciden.",
+    passwordChangeError: "Error al cambiar la contraseña. Por favor, verifica tu contraseña actual.",
+    security: "Seguridad",
 
     // Questionnaires
     questionnaire: "Cuestionario",
