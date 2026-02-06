@@ -43,6 +43,9 @@ import {
   Flame,
   Star,
   FileQuestion,
+  RefreshCw,
+  Key,
+  Copy,
   Download,
 } from "lucide-react"
 import { ChatTranscript } from "@/components/chat-transcript"
@@ -863,6 +866,36 @@ export default function PatientStatisticsPage() {
 
   const totalSessions = sessions.length
 
+  const handleRegenerateCode = async () => {
+    if (!confirm(t("confirmRegenerateCode"))) return
+
+    try {
+      const newCode = await api.regeneratePatientCode(patientId)
+      if (newCode) {
+        if (patient) {
+          setPatient({ ...patient, access_code: newCode })
+        }
+        toast({
+          title: t("codeRegenerated"),
+          description: `${t("newCode")}: ${newCode}`,
+        })
+      } else {
+        toast({
+          title: t("error"),
+          description: t("errorRegeneratingCode"),
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error(error)
+      toast({
+        title: t("error"),
+        description: "Unexpected error",
+        variant: "destructive",
+      })
+    }
+  }
+
   if (!isAuthenticated) return null
 
   return (
@@ -875,8 +908,37 @@ export default function PatientStatisticsPage() {
           </Button>
           <div className="flex-1">
             <h1 className="text-3xl font-semibold text-neutral-charcoal mb-2">{t("patient")} #{patient?.patientCode || patientId}</h1>
-            <p className="text-muted-foreground">{t("viewPatientInfo")}</p>
+            <div className="flex items-center gap-4 text-muted-foreground">
+              <p>{t("viewPatientInfo")}</p>
+              {patient?.access_code && (
+                <div className="flex items-center gap-2 bg-muted/40 px-3 py-1 rounded-full border border-soft-gray ml-2">
+                  <Key className="h-3 w-3 text-calm-teal" />
+                  <span className="text-xs font-mono font-medium text-neutral-charcoal tracking-wider">
+                    ••••••
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 hover:bg-calm-teal/10 text-muted-foreground hover:text-calm-teal rounded-full"
+                    onClick={() => {
+                      navigator.clipboard.writeText(patient.access_code)
+                      alert("Código copiado: " + patient.access_code)
+                    }}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
+          <Button
+            onClick={handleRegenerateCode}
+            variant="outline"
+            className="rounded-xl border-calm-teal text-calm-teal hover:bg-calm-teal hover:text-white transition-colors"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            {t("generateNewCode")}
+          </Button>
         </div>
 
         <Card className="rounded-2xl border-soft-gray shadow-soft p-0 overflow-hidden">
