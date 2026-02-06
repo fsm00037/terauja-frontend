@@ -424,6 +424,47 @@ export async function login(email: string, password: string): Promise<LoginRespo
     }
 }
 
+export async function changePassword(currentPassword: string, newPassword: string): Promise<boolean> {
+    try {
+        const res = await fetchWithAuth(`${API_URL}/auth/change-password`, {
+            method: 'POST',
+            body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
+        });
+        return res.ok;
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+}
+
+export async function forgotPassword(email: string): Promise<boolean> {
+    try {
+        const res = await fetch(`${API_URL}/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        return res.ok;
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<boolean> {
+    try {
+        const res = await fetch(`${API_URL}/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, new_password: newPassword })
+        });
+        return res.ok;
+    } catch (e) {
+        console.error(e);
+        return false;
+    }
+}
+
 export async function createPsychologist(name: string, email: string): Promise<Psychologist | null> {
     try {
         const res = await fetchWithAuth(`${API_URL}/psychologists`, {

@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Settings as SettingsIcon, Save, Mail } from "lucide-react"
+import { Settings as SettingsIcon, Save, Mail, Lock } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
-import { getUserProfile, updateUserProfile } from "@/lib/api"
+import { getUserProfile, updateUserProfile, changePassword } from "@/lib/api"
 
 export default function SettingsPage() {
     const router = useRouter()
@@ -22,6 +22,42 @@ export default function SettingsPage() {
     const [instructions, setInstructions] = useState("")
     const [isSaving, setIsSaving] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+
+    // Password state
+    const [currentPassword, setCurrentPassword] = useState("")
+    const [newPassword, setNewPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [isChangingPassword, setIsChangingPassword] = useState(false)
+
+    const handlePasswordChange = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (newPassword !== confirmPassword) {
+            alert(t("passwordsDoNotMatch"))
+            return
+        }
+        if (newPassword.length < 8) {
+            alert(t("passwordTooShort"))
+            return
+        }
+
+        setIsChangingPassword(true)
+        try {
+            const success = await changePassword(currentPassword, newPassword)
+            if (success) {
+                alert(t("passwordChanged"))
+                setCurrentPassword("")
+                setNewPassword("")
+                setConfirmPassword("")
+            } else {
+                alert(t("passwordChangeError"))
+            }
+        } catch (error) {
+            console.error(error)
+            alert("Error inesperado")
+        } finally {
+            setIsChangingPassword(false)
+        }
+    }
 
     useEffect(() => {
         const auth = localStorage.getItem("isAuthenticated")
@@ -165,6 +201,65 @@ export default function SettingsPage() {
                                     className="px-8 h-11 rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white shadow-md flex items-center gap-2">
                                     <Save className="h-4 w-4" />
                                     {isSaving ? "Guardando..." : t("saveConfig")}
+                                </Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
+
+                {/* Security Card */}
+                <Card className="rounded-2xl border-soft-gray shadow-soft">
+                    <CardHeader>
+                        <CardTitle className="text-neutral-charcoal flex items-center gap-2">
+                            <Lock className="h-5 w-5 text-calm-teal" />
+                            {t("security")}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handlePasswordChange} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="currentPassword">{t("currentPassword") || "Contraseña Actual"}</Label>
+                                <Input
+                                    id="currentPassword"
+                                    type="password"
+                                    value={currentPassword}
+                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    required
+                                    className="h-11 rounded-xl border-soft-gray"
+                                />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="newPassword">{t("newPassword") || "Nueva Contraseña"}</Label>
+                                    <Input
+                                        id="newPassword"
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        required
+                                        className="h-11 rounded-xl border-soft-gray"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="confirmPassword">{t("confirmPassword") || "Confirmar Contraseña"}</Label>
+                                    <Input
+                                        id="confirmPassword"
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        required
+                                        className="h-11 rounded-xl border-soft-gray"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex justify-end pt-2">
+                                <Button
+                                    type="submit"
+                                    disabled={isChangingPassword}
+                                    variant="outline"
+                                    className="border-calm-teal text-calm-teal hover:bg-calm-teal hover:text-white"
+                                >
+                                    {isChangingPassword ? "Actualizando..." : (t("updatePassword") || "Actualizar Contraseña")}
                                 </Button>
                             </div>
                         </form>
