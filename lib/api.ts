@@ -1135,14 +1135,72 @@ export interface PlatformStats {
     total_messages_patient: number
 }
 
+export interface DailyMessageStat {
+    date: string
+    patient_count: number
+    psychologist_count: number
+}
+
+export interface DetailedPsychologist {
+    id: number
+    name: string
+    email: string
+    role: string
+    is_online: boolean
+    patients_count: number
+    sessions_count: number
+    ai_clicks: number
+    message_count: number
+    word_count: number
+}
+
+export interface DetailedPatient {
+    id: number
+    name: string
+    patient_code: string
+    psychologist_name: string
+    is_online: boolean
+    message_count: number
+    word_count: number
+    total_online_seconds: number
+    last_active: string
+}
+
+export interface DetailedUsersResponse {
+    psychologists: DetailedPsychologist[]
+    patients: DetailedPatient[]
+}
+
 export async function getPlatformStats(): Promise<PlatformStats | null> {
     try {
-        const res = await fetchWithAuth(`${API_URL}/superadmin/stats`);
-        if (!res.ok) return null;
-        return await res.json();
+        const response = await fetchWithAuth(`${API_URL}/superadmin/stats`)
+        if (!response.ok) return null
+        return await response.json()
     } catch (e) {
-        console.error(e);
-        return null;
+        console.error(e)
+        return null
+    }
+}
+
+export async function getDailyMessageStats(): Promise<DailyMessageStat[]> {
+    try {
+        const response = await fetchWithAuth(`${API_URL}/superadmin/stats/daily-messages`)
+        if (!response.ok) return []
+        return await response.json()
+    } catch (e) {
+        console.error(e)
+        return []
+    }
+}
+
+export async function getDetailedUsers(): Promise<DetailedUsersResponse | null> {
+    try {
+        const response = await fetchWithAuth(`${API_URL}/superadmin/users/detailed`)
+        if (!response.ok) return null
+        return await response.json()
+    } catch (e) {
+        console.error(e)
+        return null
     }
 }
 

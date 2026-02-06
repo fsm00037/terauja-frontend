@@ -15,6 +15,17 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer
+} from "recharts"
 import {
     Users,
     Activity,
@@ -28,7 +39,9 @@ export default function SuperAdminPage() {
     const router = useRouter()
     const { t } = useLanguage()
     const [stats, setStats] = useState<api.PlatformStats | null>(null)
-    const [users, setUsers] = useState<api.Psychologist[]>([])
+    const [dailyStats, setDailyStats] = useState<api.DailyMessageStat[]>([])
+    const [detailedUsers, setDetailedUsers] = useState<api.DetailedUsersResponse | null>(null)
+    const [users, setUsers] = useState<api.Psychologist[]>([]) // Keep for backward compat or replace
     const [isLoading, setIsLoading] = useState(true)
 
     // Create User Form State
@@ -55,12 +68,16 @@ export default function SuperAdminPage() {
     const loadData = async () => {
         setIsLoading(true)
         try {
-            const [statsData, usersData] = await Promise.all([
+            const [statsData, usersData, dailyData, detailedData] = await Promise.all([
                 api.getPlatformStats(),
-                api.getSystemUsers()
+                api.getSystemUsers(),
+                api.getDailyMessageStats(),
+                api.getDetailedUsers()
             ])
             setStats(statsData)
             setUsers(usersData)
+            setDailyStats(dailyData)
+            setDetailedUsers(detailedData)
         } catch (e) {
             console.error(e)
         } finally {
@@ -116,7 +133,6 @@ export default function SuperAdminPage() {
                     </Button>
                 </div>
 
-                {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -160,147 +176,282 @@ export default function SuperAdminPage() {
                     </Card>
                 </div>
 
-                {/* Message Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Mensajes de Psicólogos</CardTitle>
-                            <Activity className="h-4 w-4 text-purple-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-purple-600">{stats?.total_messages_psychologist || 0}</div>
-                            <p className="text-xs text-muted-foreground">Enviados por profesionales</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Mensajes de Pacientes</CardTitle>
-                            <Activity className="h-4 w-4 text-orange-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-orange-600">{stats?.total_messages_patient || 0}</div>
-                            <p className="text-xs text-muted-foreground">Enviados por usuarios</p>
-                        </CardContent>
-                    </Card>
-                </div>
+                <Tabs defaultValue="overview" className="space-y-4">
+                    <TabsList>
+                        <TabsTrigger value="overview">Vista General</TabsTrigger>
+                        <TabsTrigger value="psychologists">Psicólogos Detallado</TabsTrigger>
+                        <TabsTrigger value="patients">Pacientes Detallado</TabsTrigger>
+                        <TabsTrigger value="users">Gestión de Usuarios</TabsTrigger>
+                    </TabsList>
 
-                {/* Users Management */}
-                <Card className="border-0 shadow-md">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle>Gestión de Usuarios</CardTitle>
-                            <CardDescription>Administra psicólogos y administradores del sistema</CardDescription>
+                    <TabsContent value="overview" className="space-y-4">
+                        {/* Messages Stats */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Mensajes de Psicólogos</CardTitle>
+                                    <Activity className="h-4 w-4 text-purple-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold text-purple-600">{stats?.total_messages_psychologist || 0}</div>
+                                    <p className="text-xs text-muted-foreground">Enviados por profesionales</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Mensajes de Pacientes</CardTitle>
+                                    <Activity className="h-4 w-4 text-orange-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold text-orange-600">{stats?.total_messages_patient || 0}</div>
+                                    <p className="text-xs text-muted-foreground">Enviados por usuarios</p>
+                                </CardContent>
+                            </Card>
                         </div>
 
-                        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                            <DialogTrigger asChild>
-                                <Button className="bg-blue-600 hover:bg-blue-700">
-                                    <UserPlus className="mr-2 h-4 w-4" />
-                                    Crear Usuario
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Crear Nuevo Usuario</DialogTitle>
-                                    <DialogDescription>
-                                        Añade un nuevo administrador o psicólogo al sistema.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
-                                    <div className="space-y-2">
-                                        <Label>Nombre Completo</Label>
-                                        <Input
-                                            required
-                                            value={newUser.name}
-                                            onChange={e => setNewUser({ ...newUser, name: e.target.value })}
-                                            placeholder="Ej. Dr. Juan Pérez"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Email</Label>
-                                        <Input
-                                            required
-                                            type="email"
-                                            value={newUser.email}
-                                            onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                                            placeholder="correo@ejemplo.com"
-                                        />
-                                    </div>
+                        {/* Chart */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Mensajes Diarios (Últimos 30 días)</CardTitle>
+                            </CardHeader>
+                            <CardContent className="h-[350px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={dailyStats}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="date" />
+                                        <YAxis />
+                                        <Tooltip />
+                                        <Legend />
+                                        <Line type="monotone" dataKey="psychologist_count" stroke="#8884d8" name="Psicólogos" />
+                                        <Line type="monotone" dataKey="patient_count" stroke="#82ca9d" name="Pacientes" />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
 
-                                    <div className="space-y-2">
-                                        <Label>Rol</Label>
-                                        <Select
-                                            value={newUser.role}
-                                            onValueChange={(val: "psychologist" | "admin") => setNewUser({ ...newUser, role: val })}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="psychologist">Psicólogo</SelectItem>
-                                                <SelectItem value="admin">Administrador</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="flex justify-end pt-4">
-                                        <Button type="submit">Crear Usuario</Button>
-                                    </div>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
+                    <TabsContent value="psychologists">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Estadísticas de Psicólogos</CardTitle>
+                                <CardDescription>Detalle de actividad y uso de la plataforma</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="rounded-md border">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-gray-50 text-gray-500 font-medium">
+                                            <tr>
+                                                <th className="p-4">Psicólogo</th>
+                                                <th className="p-4">Pacientes</th>
+                                                <th className="p-4">Sesiones</th>
+                                                <th className="p-4">Mensajes</th>
+                                                <th className="p-4">Palabras</th>
+                                                <th className="p-4">Uso de IA</th>
+                                                <th className="p-4">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {detailedUsers?.psychologists.map(psych => (
+                                                <tr key={psych.id} className="hover:bg-gray-50/50">
+                                                    <td className="p-4 font-medium">
+                                                        <div>{psych.name}</div>
+                                                        <div className="text-xs text-gray-400">{psych.email}</div>
+                                                    </td>
+                                                    <td className="p-4">{psych.patients_count}</td>
+                                                    <td className="p-4">{psych.sessions_count}</td>
+                                                    <td className="p-4">{psych.message_count}</td>
+                                                    <td className="p-4">{psych.word_count.toLocaleString()}</td>
+                                                    <td className="p-4">
+                                                        <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
+                                                            {psych.ai_clicks} clicks
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={`w-2 h-2 rounded-full ${psych.is_online ? "bg-green-500" : "bg-gray-300"}`} />
+                                                            <span className="text-gray-500 text-xs">
+                                                                {psych.is_online ? "En línea" : "Desconectado"}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
 
-                    </CardHeader>
-                    <CardContent>
-                        <div className="rounded-md border">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-gray-50 text-gray-500 font-medium">
-                                    <tr>
-                                        <th className="p-4">Nombre</th>
-                                        <th className="p-4">Email</th>
-                                        <th className="p-4">Rol</th>
-                                        <th className="p-4">Estado</th>
-                                        <th className="p-4 text-right">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {users.map(user => (
-                                        <tr key={user.id} className="hover:bg-gray-50/50">
-                                            <td className="p-4 font-medium">{user.name}</td>
-                                            <td className="p-4 text-gray-500">{user.email}</td>
-                                            <td className="p-4">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === 'admin'
-                                                    ? 'bg-purple-100 text-purple-700'
-                                                    : user.role === 'superadmin'
-                                                        ? 'bg-amber-100 text-amber-700'
-                                                        : 'bg-blue-100 text-blue-700'
-                                                    }`}>
-                                                    {user.role === 'admin' ? 'Administrador' : user.role === 'superadmin' ? 'Super Admin' : 'Psicólogo'}
-                                                </span>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className={`w-2 h-2 rounded-full ${user.totalOnlineSeconds && user.totalOnlineSeconds > 0 ? "bg-green-500" : "bg-gray-300"}`} />
-                                                    <span className="text-gray-500">
-                                                        {user.totalOnlineSeconds && user.totalOnlineSeconds > 0 ? t("online") : t("offline")}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="p-4 text-right text-gray-400">
-                                                {/* Placeholder for Edit/Delete */}
-                                                ...
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {users.length === 0 && (
-                                        <tr>
-                                            <td colSpan={5} className="p-8 text-center text-gray-500">No hay usuarios registrados</td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </CardContent>
-                </Card>
+                    <TabsContent value="patients">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Estadísticas de Pacientes</CardTitle>
+                                <CardDescription>Detalle de actividad por paciente</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="rounded-md border">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-gray-50 text-gray-500 font-medium">
+                                            <tr>
+                                                <th className="p-4">Paciente</th>
+                                                <th className="p-4">Psicólogo Asignado</th>
+                                                <th className="p-4">Mensajes</th>
+                                                <th className="p-4">Palabras</th>
+                                                <th className="p-4">Tiempo Online</th>
+                                                <th className="p-4">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {detailedUsers?.patients.map(patient => (
+                                                <tr key={patient.id} className="hover:bg-gray-50/50">
+                                                    <td className="p-4 font-medium">
+                                                        <div>{patient.patient_code}</div>
+                                                        <div className="text-xs text-gray-400">ID: {patient.id}</div>
+                                                    </td>
+                                                    <td className="p-4 text-gray-600">{patient.psychologist_name}</td>
+                                                    <td className="p-4">{patient.message_count}</td>
+                                                    <td className="p-4">{patient.word_count.toLocaleString()}</td>
+                                                    <td className="p-4">
+                                                        {Math.floor(patient.total_online_seconds / 60)} mins
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={`w-2 h-2 rounded-full ${patient.is_online ? "bg-green-500" : "bg-gray-300"}`} />
+                                                            <span className="text-gray-500 text-xs">
+                                                                {patient.is_online ? "En línea" : "Desconectado"}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="users">
+                        {/* Users Management */}
+                        <Card className="border-0 shadow-md">
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div>
+                                    <CardTitle>Gestión de Usuarios</CardTitle>
+                                    <CardDescription>Administra psicólogos y administradores del sistema</CardDescription>
+                                </div>
+
+                                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button className="bg-blue-600 hover:bg-blue-700">
+                                            <UserPlus className="mr-2 h-4 w-4" />
+                                            Crear Usuario
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Crear Nuevo Usuario</DialogTitle>
+                                            <DialogDescription>
+                                                Añade un nuevo administrador o psicólogo al sistema.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
+                                            <div className="space-y-2">
+                                                <Label>Nombre Completo</Label>
+                                                <Input
+                                                    required
+                                                    value={newUser.name}
+                                                    onChange={e => setNewUser({ ...newUser, name: e.target.value })}
+                                                    placeholder="Ej. Dr. Juan Pérez"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Email</Label>
+                                                <Input
+                                                    required
+                                                    type="email"
+                                                    value={newUser.email}
+                                                    onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                                                    placeholder="correo@ejemplo.com"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label>Rol</Label>
+                                                <Select
+                                                    value={newUser.role}
+                                                    onValueChange={(val: "psychologist" | "admin") => setNewUser({ ...newUser, role: val })}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="psychologist">Psicólogo</SelectItem>
+                                                        <SelectItem value="admin">Administrador</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="flex justify-end pt-4">
+                                                <Button type="submit">Crear Usuario</Button>
+                                            </div>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+
+                            </CardHeader>
+                            <CardContent>
+                                <div className="rounded-md border">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-gray-50 text-gray-500 font-medium">
+                                            <tr>
+                                                <th className="p-4">Nombre</th>
+                                                <th className="p-4">Email</th>
+                                                <th className="p-4">Rol</th>
+                                                <th className="p-4">Estado</th>
+                                                <th className="p-4 text-right">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {users.map(user => (
+                                                <tr key={user.id} className="hover:bg-gray-50/50">
+                                                    <td className="p-4 font-medium">{user.name}</td>
+                                                    <td className="p-4 text-gray-500">{user.email}</td>
+                                                    <td className="p-4">
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === 'admin'
+                                                            ? 'bg-purple-100 text-purple-700'
+                                                            : user.role === 'superadmin'
+                                                                ? 'bg-amber-100 text-amber-700'
+                                                                : 'bg-blue-100 text-blue-700'
+                                                            }`}>
+                                                            {user.role === 'admin' ? 'Administrador' : user.role === 'superadmin' ? 'Super Admin' : 'Psicólogo'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={`w-2 h-2 rounded-full ${user.totalOnlineSeconds && user.totalOnlineSeconds > 0 ? "bg-green-500" : "bg-gray-300"}`} />
+                                                            <span className="text-gray-500">
+                                                                {user.totalOnlineSeconds && user.totalOnlineSeconds > 0 ? t("online") : t("offline")}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 text-right text-gray-400">
+                                                        {/* Placeholder for Edit/Delete */}
+                                                        ...
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {users.length === 0 && (
+                                                <tr>
+                                                    <td colSpan={5} className="p-8 text-center text-gray-500">No hay usuarios registrados</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
             </div>
         </div>
     )
