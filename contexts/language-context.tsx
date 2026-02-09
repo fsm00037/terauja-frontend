@@ -41,6 +41,10 @@ const translations = {
     backToLogin: "Back to Login",
     checkEmail: "Check your email for a recovery link",
     recoveryLinkSent: "Recovery link sent",
+    resetPassword: "Reset Password",
+    passwordResetSuccess: "Password reset successfully. You can now login.",
+    passwordResetError: "Error resetting password. The link may have expired.",
+    enterNewPassword: "Enter your new password",
 
 
     // Navigation
@@ -326,6 +330,10 @@ const translations = {
     backToLogin: "Volver a Iniciar Sesión",
     checkEmail: "Revisa tu correo electrónico",
     recoveryLinkSent: "Enlace de recuperación enviado",
+    resetPassword: "Restablecer Contraseña",
+    passwordResetSuccess: "Contraseña restablecida correctamente. Ahora puedes iniciar sesión.",
+    passwordResetError: "Error al restablecer. El enlace puede haber expirado.",
+    enterNewPassword: "Ingresa tu nueva contraseña",
 
     // Navigation
     dashboard: "Panel",

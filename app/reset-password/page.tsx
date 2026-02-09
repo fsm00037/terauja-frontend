@@ -126,7 +126,7 @@ export default function ResetPasswordPage() {
                         {t("resetPassword") || "Restablecer Contraseña"}
                     </CardTitle>
                     <CardDescription className="text-base text-muted-foreground">
-                        Ingresa tu nueva contraseña
+                        {t("enterNewPassword") || "Ingresa tu nueva contraseña"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
