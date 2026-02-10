@@ -104,6 +104,9 @@ export default function PatientStatisticsPage() {
       type?: "likert" | "scale" | "frequency" | "openText"
       options?: string[]
       maxValue?: number
+      minValue?: number
+      minLabel?: string
+      maxLabel?: string
     }[]
     readByTherapist: boolean
     isDelayed?: boolean
@@ -149,7 +152,10 @@ export default function PatientStatisticsPage() {
                 answer: ans.value || ans.answer, // Check both value and answer keys
                 type: ans.type || qDef?.type || "openText",
                 options: ans.options || qDef?.options || [],
-                maxValue: ans.max_value || qDef?.max || 5
+                maxValue: ans.max_value || qDef?.max || 5,
+                minValue: ans.min_value || qDef?.min || 1,
+                minLabel: ans.min_label || qDef?.minLabel,
+                maxLabel: ans.max_label || qDef?.maxLabel
               }
             }),
             readByTherapist: (c as any).read_by_therapist || false,
@@ -1902,8 +1908,8 @@ export default function PatientStatisticsPage() {
                                                       />
                                                     </div>
                                                     <div className="flex justify-between text-xs font-medium px-1 mt-1">
-                                                      <span className="text-calm-teal">Mínimo (1)</span>
-                                                      <span className="text-calm-teal">Máximo ({ans.maxValue || 5})</span>
+                                                      <span className="text-calm-teal">{ans.minLabel || "Mínimo"} ({ans.minValue || 1})</span>
+                                                      <span className="text-calm-teal">{ans.maxLabel || "Máximo"} ({ans.maxValue || 5})</span>
                                                     </div>
                                                   </div>
                                                 ) : ans.type === 'frequency' ? (
