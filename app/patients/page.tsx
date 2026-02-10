@@ -6,7 +6,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Search, Plus, Edit, Trash2, Eye, Copy } from "lucide-react"
+import { Search, Plus, Edit, Trash2, Eye, Copy, Link, ExternalLink } from "lucide-react"
 import { CreatePatientModal } from "@/components/create-patient-modal"
 import { useLanguage } from "@/contexts/language-context"
 
@@ -82,6 +82,40 @@ export default function PatientsPage() {
             {t("createNewPatient")}
           </Button>
         </div>
+
+        <Card className="rounded-2xl border-soft-gray shadow-soft bg-calm-teal/5 border-calm-teal/20">
+          <CardContent className="p-4 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-calm-teal/15">
+                <Link className="h-4 w-4 text-calm-teal" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-neutral-charcoal">{t("patientAppLink")}</p>
+                <a
+                  href="https://s5-ceatic.ujaen.es:8009/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-calm-teal hover:underline flex items-center gap-1"
+                >
+                  https://s5-ceatic.ujaen.es:8009/
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl border-calm-teal/30 text-calm-teal hover:bg-calm-teal/10"
+              onClick={() => {
+                navigator.clipboard.writeText("https://s5-ceatic.ujaen.es:8009/")
+                alert(t("linkCopied"))
+              }}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              {t("copyLink")}
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card className="rounded-2xl border-soft-gray shadow-soft">
           <CardContent className="p-6">

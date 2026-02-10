@@ -302,6 +302,11 @@ const translations = {
     noAssignments: "No active assignments found.",
     assignQuestionnaire: "Assign Questionnaire",
     editQuestionnaire: "Edit Questionnaire",
+
+    // Patient App Link
+    patientAppLink: "Patient app link",
+    linkCopied: "Link copied to clipboard",
+    copyLink: "Copy link",
   },
   es: {
     // Common
@@ -604,6 +609,11 @@ const translations = {
     deleteAssignment: "Eliminar Asignación",
     noAssignments: "No hay asignaciones",
     assignQuestionnaire: "Asignar Cuestionario",
+
+    // Patient App Link
+    patientAppLink: "App para pacientes",
+    linkCopied: "Enlace copiado al portapapeles",
+    copyLink: "Copiar enlace",
   },
 }
 
