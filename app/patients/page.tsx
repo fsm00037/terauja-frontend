@@ -74,13 +74,7 @@ export default function PatientsPage() {
             <h1 className="text-3xl font-semibold text-neutral-charcoal mb-2">{t("patientManagement")}</h1>
             <p className="text-muted-foreground">{t("patientManagementDesc")}</p>
           </div>
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white shadow-md"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {t("createNewPatient")}
-          </Button>
+
         </div>
 
         <Card className="rounded-2xl border-soft-gray shadow-soft bg-calm-teal/5 border-calm-teal/20">
@@ -119,14 +113,23 @@ export default function PatientsPage() {
 
         <Card className="rounded-2xl border-soft-gray shadow-soft">
           <CardContent className="p-6">
-            <div className="relative mb-6">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder={t("searchPatients")}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11 rounded-xl border-soft-gray"
-              />
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder={t("searchPatients")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-11 rounded-xl border-soft-gray"
+                />
+              </div>
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white shadow-md shrink-0"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {t("createNewPatient")}
+              </Button>
             </div>
 
             <div className="overflow-x-auto">
