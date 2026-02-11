@@ -12,6 +12,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Settings as SettingsIcon, Save, Mail, Lock } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { getUserProfile, updateUserProfile, changePassword } from "@/lib/api"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 export default function SettingsPage() {
     const router = useRouter()
@@ -75,7 +82,7 @@ export default function SettingsPage() {
         try {
             const profile = await getUserProfile(userId)
             if (profile) {
-                setStyle(profile.ai_style || "")
+                setStyle(profile.ai_style || "none")
                 setTone(profile.ai_tone || "")
                 setInstructions(profile.ai_instructions || "")
             }
@@ -97,7 +104,7 @@ export default function SettingsPage() {
             }
 
             await updateUserProfile(userId, {
-                ai_style: style,
+                ai_style: style === "none" ? "" : style,
                 ai_tone: tone,
                 ai_instructions: instructions
             })
@@ -134,16 +141,16 @@ export default function SettingsPage() {
                                 <Label htmlFor="style" className="text-sm font-medium text-neutral-charcoal">
                                     {t("therapistStyle")}
                                 </Label>
-                                <select
-                                    id="style"
-                                    value={style}
-                                    onChange={(e) => setStyle(e.target.value)}
-                                    className="h-11 w-full rounded-xl border border-soft-gray px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value=""></option>
-                                    <option value="ACT">ACT (Terapia de Aceptación y Compromiso)</option>
-                                    <option value="CBT">TCC (Terapia Cognitivo-Conductual)</option>
-                                </select>
+                                <Select value={style} onValueChange={setStyle}>
+                                    <SelectTrigger className="w-full h-11 rounded-xl border-soft-gray bg-white">
+                                        <SelectValue placeholder="Selecciona un estilo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">Ninguno</SelectItem>
+                                        <SelectItem value="ACT">ACT (Terapia de Aceptación y Compromiso)</SelectItem>
+                                        <SelectItem value="CBT">TCC (Terapia Cognitivo-Conductual)</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
