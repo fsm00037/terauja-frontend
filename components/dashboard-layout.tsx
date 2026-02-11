@@ -101,7 +101,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       <div className="fixed top-4 right-4 z-50">
-        <LanguageToggle />
+        {/* <LanguageToggle /> */}
       </div>
 
       {/* Sidebar */}
@@ -111,19 +111,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 border-b border-soft-gray">
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-24 h-24 flex items-center justify-center">
+          <div className="p-2 border-b border-soft-gray">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-40 h-40 flex items-center justify-center">
                 <Image
                   src="/icon.svg"
                   alt="PsicoUJA Logo"
-                  width={96}
-                  height={96}
-                  className="w-24 h-24 object-contain"
+                  width={160}
+                  height={160}
+                  className="w-40 h-40 object-contain"
                   priority
                 />
               </div>
-              <h1 className="text-xl font-semibold text-neutral-charcoal">PsicoUJA</h1>
+
             </div>
           </div>
 

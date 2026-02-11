@@ -53,21 +53,21 @@ export default function LoginPage() {
       </div>
 
       <Card className="w-full max-w-md shadow-xl rounded-2xl border-0">
-        <CardHeader className="space-y-3 text-center pb-6">
-          <div className="mx-auto w-32 h-32 flex items-center justify-center mb-4">
+        <CardHeader className="space-y-3 text-center pb-0">
+          <div className="mx-auto w-64 h-64 flex items-center justify-center mb-0">
             <Image
               src="/icon.svg"
               alt="PsicoUJA Logo"
-              width={128}
-              height={128}
+              width={256}
+              height={256}
               className="object-contain"
               priority
             />
           </div>
-          <CardTitle className="text-3xl font-semibold text-neutral-charcoal">PsicoUJA</CardTitle>
+          {/* <CardTitle className="text-2xl font-semibold text-neutral-charcoal">PsicoUJA</CardTitle>
           <CardDescription className="text-base text-muted-foreground">
             Sistema de Supervisión Psicológica
-          </CardDescription>
+          </CardDescription> */}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-5">
