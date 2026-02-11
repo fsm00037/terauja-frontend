@@ -42,6 +42,7 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
   const [aiSuggestionLogId, setAiSuggestionLogId] = useState<number | null>(null);
   const [originalAiText, setOriginalAiText] = useState<string | null>(null);
   const [isAiUsed, setIsAiUsed] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   // Optimize: Only update state if messages have actually changed
   const loadMessages = async () => {
@@ -104,8 +105,9 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
   }, [messages]);
 
   const sendMessage = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || isSending) return;
 
+    setIsSending(true);
     try {
       // If AI suggestions were available (aiSuggestionLogId is set), we track it.
       // was_edited_by_human is true if we either edited a suggestion OR ignored them for a custom message.
@@ -146,6 +148,8 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
       }
     } catch (error) {
       console.error("Failed to send message", error);
+    } finally {
+      setIsSending(false);
     }
   }
 
@@ -321,16 +325,26 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
                 value={customResponse}
                 onChange={(e) => setCustomResponse(e.target.value)}
                 className="min-h-[100px] rounded-xl border-soft-gray resize-none"
+                disabled={isSending}
               />
             </div>
 
             <Button
               onClick={() => sendMessage(customResponse)}
-              disabled={!customResponse.trim()}
+              disabled={!customResponse.trim() || isSending}
               className="w-full rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white shadow-md"
             >
-              <Send className="h-4 w-4 mr-2" />
-              {t("sendMessage")}
+              {isSending ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                  {t("sending") || "Enviando..."}
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  {t("sendMessage")}
+                </>
+              )}
             </Button>
 
           </CardContent>
