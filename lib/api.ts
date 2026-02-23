@@ -1188,6 +1188,7 @@ export interface PlatformStats {
     online_patients: number
     total_messages_psychologist: number
     total_messages_patient: number
+    total_words: number
 }
 
 export interface DailyMessageStat {
@@ -1207,6 +1208,7 @@ export interface DetailedPsychologist {
     ai_clicks: number
     message_count: number
     word_count: number
+    last_active?: string
 }
 
 export interface DetailedPatient {
