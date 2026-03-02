@@ -136,7 +136,10 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
           ai_suggestion_log_id: newMsg.ai_suggestion_log_id
         };
 
-        setMessages(prev => [...prev, fullMsg]);
+        setMessages(prev => {
+          if (prev.some(m => m.id === fullMsg.id)) return prev;
+          return [...prev, fullMsg];
+        });
 
         // Reset de estados
         setCustomResponse("");
