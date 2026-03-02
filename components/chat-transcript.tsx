@@ -21,11 +21,12 @@ interface Message {
 
 interface ChatTranscriptProps {
   patientId: string
+  caseNumber?: string
   onSaveAndClose?: (messages: Message[], sessionNotes: string, sessionDescription: string) => void
   isOnline?: boolean
 }
 
-export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: ChatTranscriptProps) {
+export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline = false }: ChatTranscriptProps) {
   const { t } = useLanguage()
   const [messages, setMessages] = useState<Message[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -263,7 +264,7 @@ export function ChatTranscript({ patientId, onSaveAndClose, isOnline = false }: 
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium text-neutral-charcoal">
-                            {message.sender === "patient" ? t("patient") : t("therapist")}
+                            {message.sender === "patient" ? `Paciente #${caseNumber || patientId}` : t("therapist")}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {new Date(message.timestamp + "Z").toLocaleString("es-ES", {

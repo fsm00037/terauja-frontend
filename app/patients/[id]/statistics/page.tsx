@@ -1458,7 +1458,7 @@ export default function PatientStatisticsPage() {
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="font-medium text-neutral-charcoal">
-                                  {message.sender === "patient" ? t("patient") : t("therapist")}
+                                  {message.sender === "patient" ? `Paciente #${patient?.patientCode || patientId}` : t("therapist")}
                                 </p>
                                 <p className="text-xs text-muted-foreground">{new Date(message.timestamp + "Z").toLocaleTimeString("es-ES", {
                                   hour: "2-digit",
@@ -1526,7 +1526,7 @@ export default function PatientStatisticsPage() {
           </div>
         )}
 
-        {activeTab === "chat" && <ChatTranscript patientId={patientId} onSaveAndClose={handleSaveAndCloseChat} isOnline={isPatientOnline} />}
+        {activeTab === "chat" && <ChatTranscript patientId={patientId} caseNumber={patient?.patientCode || patientId} onSaveAndClose={handleSaveAndCloseChat} isOnline={isPatientOnline} />}
 
         {/* Notes*/}
         {activeTab === "notes" && (
