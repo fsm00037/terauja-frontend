@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import * as api from "@/lib/api"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, MessageSquare, ClipboardList } from "lucide-react"
+import { Users, MessageSquare, ClipboardList, LayoutDashboard } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 
 export default function DashboardPage() {
@@ -55,7 +55,8 @@ export default function DashboardPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-semibold text-neutral-charcoal mb-2">
+          <h1 className="text-3xl font-semibold text-neutral-charcoal flex items-center gap-3 mb-2">
+            <LayoutDashboard className="h-8 w-8 text-calm-teal" />
             {t("welcomeBack", { name: userName })}
           </h1>
           <p className="text-muted-foreground">{t("overviewToday")}</p>

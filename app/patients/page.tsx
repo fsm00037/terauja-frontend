@@ -6,7 +6,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Search, Plus, Edit, Trash2, Eye, Copy, Link, ExternalLink } from "lucide-react"
+import { Search, Plus, Edit, Trash2, Eye, Copy, Link, ExternalLink, Users } from "lucide-react"
 import { CreatePatientModal } from "@/components/create-patient-modal"
 import { useLanguage } from "@/contexts/language-context"
 
@@ -71,7 +71,10 @@ export default function PatientsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-neutral-charcoal mb-2">{t("patientManagement")}</h1>
+            <h1 className="text-3xl font-semibold text-neutral-charcoal flex items-center gap-3 mb-2">
+              <Users className="h-8 w-8 text-calm-teal" />
+              {t("patientManagement")}
+            </h1>
             <p className="text-muted-foreground">{t("patientManagementDesc")}</p>
           </div>
 

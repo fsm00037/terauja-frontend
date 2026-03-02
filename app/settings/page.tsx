@@ -124,7 +124,10 @@ export default function SettingsPage() {
         <DashboardLayout>
             <div className="space-y-6 max-w-3xl">
                 <div>
-                    <h1 className="text-3xl font-semibold text-neutral-charcoal mb-2">{t("settings")}</h1>
+                    <h1 className="text-3xl font-semibold text-neutral-charcoal flex items-center gap-3 mb-2">
+                        <SettingsIcon className="h-8 w-8 text-calm-teal" />
+                        {t("settings")}
+                    </h1>
                     <p className="text-muted-foreground">{t("aiConfigDesc")}</p>
                 </div>
 

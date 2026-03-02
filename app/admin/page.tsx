@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createPsychologist, getPsychologists, getPatients, assignPatientToPsychologist, deletePsychologist, type Psychologist, type Patient } from "@/lib/api"
-import { Loader2, Plus, UserCog, Trash2, Clock, RefreshCcw } from "lucide-react"
+import { Loader2, Plus, UserCog, Trash2, Clock, RefreshCcw, Shield } from "lucide-react"
 
 export default function AdminPage() {
     const router = useRouter()
@@ -151,7 +151,10 @@ export default function AdminPage() {
             <div className="max-w-7xl mx-auto space-y-8">
                 <div className="flex justify-between items-end">
                     <div>
-                        <h1 className="text-3xl font-bold text-neutral-charcoal text-balance">Administración del Sistema</h1>
+                        <h1 className="text-3xl font-bold text-neutral-charcoal text-balance flex items-center gap-3 mb-2">
+                            <Shield className="h-8 w-8 text-calm-teal" />
+                            Administración del Sistema
+                        </h1>
                         <p className="text-muted-foreground mt-2">Gestiona el equipo profesional y la carga de pacientes.</p>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => fetchData(true)} className="rounded-xl">

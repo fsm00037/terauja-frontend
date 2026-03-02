@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Camera, Info, Save } from "lucide-react"
+import { Camera, Info, Save, UserCircle } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import * as api from "@/lib/api"
 
@@ -73,7 +73,10 @@ export default function ProfilePage() {
     <DashboardLayout>
       <div className="space-y-6 max-w-3xl">
         <div>
-          <h1 className="text-3xl font-semibold text-neutral-charcoal mb-2">{t("profileSettings")}</h1>
+          <h1 className="text-3xl font-semibold text-neutral-charcoal flex items-center gap-3 mb-2">
+            <UserCircle className="h-8 w-8 text-calm-teal" />
+            {t("profileSettings")}
+          </h1>
           <p className="text-muted-foreground">{t("manageInfo")}</p>
         </div>
 
