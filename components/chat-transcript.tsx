@@ -344,7 +344,7 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
                       onClick={() => handleSelectOption(index)}
                       className={`p-3 rounded-xl border text-sm cursor-pointer transition-all flex flex-col justify-between gap-2 shrink-0 ${selectedOption === index
                         ? "bg-calm-teal/10 border-calm-teal text-neutral-charcoal shadow-sm"
-                        : "bg-white border-soft-gray hover:border-calm-teal/30 hover:bg-gray-50 text-muted-foreground"
+                        : "bg-white border-soft-gray hover:border-calm-teal/30 hover:bg-gray-50 text-gray-700 font-medium"
                         }`}
                     >
                       <p className="leading-relaxed whitespace-pre-wrap">{option}</p>
