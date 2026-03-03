@@ -409,7 +409,7 @@ const translations = {
     sessionDescription: "Asunto de la Sesión",
     enterDescription: "Ingresa el asunto de la sesión...",
     enterNotes: "Ingresa notas detalladas de la sesión...",
-    enterSummaryDescription: "Ingresa una breve descripción del resumen...",
+    enterSummaryDescription: "Ingresa un título para la sesión...",
     enterSummaryNotes: "Esto será mostrado en el historial de la sesión",
     searchConversation: "Buscar en la conversación...",
     sessionChat: "Chat de la Sesión",

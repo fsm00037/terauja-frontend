@@ -947,8 +947,8 @@ export default function PatientStatisticsPage() {
           </Button>
         </div>
 
-        <Card className="rounded-2xl border-soft-gray shadow-soft p-0 overflow-hidden">
-          <CardHeader className="border-b border-soft-gray p-0">
+        <Card className="gap-0 py-0 rounded-2xl border-soft-gray shadow-soft p-0 overflow-hidden">
+          <CardHeader className="border-b border-soft-gray p-0 pb-0 pb-[0!important] [&.border-b]:pb-0">
             <div className="flex gap-2 px-6 pt-2">
               <button
                 onClick={() => setActiveTab("assessment")}
@@ -1445,34 +1445,44 @@ export default function PatientStatisticsPage() {
                       ?.chatHistory.map((message, index) => (
                         <div
                           key={message.id || index}
-                          className={`flex gap-4 p-4 rounded-xl ${message.sender === "patient" ? "bg-[#fce2e2]" : "bg-[#EBF5FF]"}`}
+                          className={`flex gap-4 p-4 rounded-xl w-full ${message.sender === "patient" ? "justify-start" : "justify-end"}`}
                         >
-                          <Avatar
-                            className={`h-14 w-14 ${message.sender === "patient" ? "bg-white" : "bg-white"}`}
-                          >
-                            <AvatarFallback className={`text-2xl ${message.sender === "patient" ? "text-[#3B82F6]" : "text-[#1D4ED8]"}`}>
-                              {message.sender === "patient" ? "👤" : "👨‍⚕️"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-medium text-neutral-charcoal">
-                                  {message.sender === "patient" ? `Paciente #${patient?.patientCode || patientId}` : t("therapist")}
-                                </p>
-                                <p className="text-xs text-muted-foreground">{new Date(message.timestamp + "Z").toLocaleTimeString("es-ES", {
+                          {message.sender === "patient" && (
+                            <Avatar className="h-14 w-14 bg-white shrink-0 shadow-sm border border-soft-gray/50">
+                              <AvatarFallback className="text-2xl text-neutral-charcoal">👤</AvatarFallback>
+                            </Avatar>
+                          )}
+                          <div className={`flex flex-col min-w-0 max-w-[85%] ${message.sender === "patient" ? "items-start" : "items-end"}`}>
+                            <div className="flex items-center gap-2 mb-1.5 px-1 opacity-80">
+                              <span className="text-xs font-semibold text-neutral-charcoal">
+                                {message.sender === "patient" ? `Paciente #${patient?.patientCode || patientId}` : t("therapist")}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground font-medium">
+                                {new Date(message.timestamp + "Z").toLocaleTimeString("es-ES", {
                                   hour: "2-digit",
                                   minute: "2-digit",
                                   day: "2-digit",
                                   month: "2-digit",
                                   year: "numeric",
-                                })}</p>
-                              </div>
+                                })}
+                              </span>
                             </div>
-                            <p className="text-sm text-neutral-charcoal leading-relaxed session-message-text transition-colors">
-                              {message.text}
-                            </p>
+                            <div
+                              className={`px-4 py-3 rounded-2xl shadow-sm text-[15px] max-w-full overflow-hidden ${message.sender === "patient"
+                                ? "bg-white border border-soft-gray text-neutral-charcoal rounded-tl-sm ring-1 ring-gray-900/5"
+                                : "bg-calm-teal text-white rounded-tr-sm ring-1 ring-calm-teal/5"
+                                }`}
+                            >
+                              <p className="leading-relaxed whitespace-pre-wrap break-words session-message-text transition-colors">
+                                {message.text}
+                              </p>
+                            </div>
                           </div>
+                          {message.sender === "therapist" && (
+                            <Avatar className="h-14 w-14 bg-calm-teal/10 shrink-0 shadow-sm border border-calm-teal/20">
+                              <AvatarFallback className="text-2xl text-calm-teal">👨‍⚕️</AvatarFallback>
+                            </Avatar>
+                          )}
                         </div>
                       ))}
                   </div>

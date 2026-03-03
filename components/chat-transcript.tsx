@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Search, Send, Sparkles, MessageSquare, Save, FileText, X } from "lucide-react"
+import { Search, Send, Sparkles, MessageSquare, Save, FileText, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import * as api from "@/lib/api"
 
@@ -189,6 +189,14 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
       if (result) {
         setAiOptions(result.recommendations);
         setAiSuggestionLogId(result.ai_suggestion_log_id); // Guardamos el ID para el log posterior
+        if (result.recommendations && result.recommendations.length > 0) {
+          setSelectedOption(null);
+          setOriginalAiText(null);
+          if (isAiUsed) {
+            setCustomResponse("");
+          }
+          setIsAiUsed(false);
+        }
       }
     } catch (e) {
       console.error(e)
@@ -208,33 +216,40 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
-      <div className="lg:col-span-2 space-y-4">
-        <Card className="rounded-2xl border-soft-gray shadow-soft">
-          <CardHeader>
+      <div className="lg:col-span-2 flex flex-col">
+        <Card className="gap-0 py-0 rounded-2xl border-soft-gray shadow-soft flex flex-col h-full overflow-hidden">
+          <CardHeader className="border-b bg-white z-10 !pb-4 pt-4 px-6 shrink-0">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <CardTitle className="text-neutral-charcoal">{t("currentChatSession")}</CardTitle>
-                <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${isOnline
-                  ? "bg-green-50 text-green-700 border-green-200"
-                  : "bg-gray-50 text-gray-600 border-gray-200"
-                  }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
-                  {isOnline ? t("online") : t("offline")}
+              <div className="flex items-center gap-4">
+                <div className="bg-calm-teal/10 p-2.5 rounded-xl shadow-sm border border-calm-teal/20">
+                  <MessageSquare className="h-6 w-6 text-calm-teal" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-semibold text-neutral-charcoal tracking-tight">{t("currentChatSession")}</CardTitle>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="relative flex h-2.5 w-2.5">
+                      {isOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+                      <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? "bg-emerald-500" : "bg-gray-400"}`}></span>
+                    </span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      {isOnline ? t("online") : t("offline")}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="relative w-64">
+                <div className="relative w-48 sm:w-64 hidden sm:block">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder={t("searchMessages")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 rounded-xl border-soft-gray"
+                    className="pl-9 h-10 rounded-full bg-gray-50 border-soft-gray focus:bg-white focus:border-calm-teal focus:ring-1 focus:ring-calm-teal transition-all text-sm shadow-inner"
                   />
                 </div>
                 <Button
                   onClick={handleSaveAndClose}
-                  className="rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white shadow-md"
+                  className="h-10 rounded-full bg-calm-teal hover:bg-calm-teal/90 text-white shadow-md hover:shadow-lg transition-all px-5 font-medium"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {t("saveAndCloseChat")}
@@ -242,158 +257,186 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="h-[400px] overflow-y-auto mb-6 pr-2">
-              <div className="space-y-4">
+
+          <CardContent className="flex-1 flex flex-col p-0 bg-white relative">
+            <div className="h-[calc(100vh-320px)] min-h-[400px] overflow-y-auto z-0 scroll-smooth custom-scrollbar">
+              <div className="flex flex-col gap-6 px-4 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 min-h-full">
                 {filteredMessages.length === 0 && (
-                  <div className="text-center text-muted-foreground py-10">No hay mensajes.</div>
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-4 flex-1 mt-12">
+                    <div className="w-20 h-20 rounded-full bg-white shadow-sm flex items-center justify-center border border-soft-gray">
+                      <MessageSquare className="h-10 w-10 text-calm-teal/30" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">No hay mensajes en esta sesión.</p>
+                  </div>
                 )}
-                {filteredMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex gap-4 p-4 rounded-xl ${message.sender === "patient" ? "bg-[#fce2e2]" : "bg-[#EBF5FF]"}`}
-                  >
-                    <Avatar
-                      className={`h-14 w-14 ${message.sender === "patient" ? "bg-white" : "bg-white"}`}
+                {filteredMessages.map((message) => {
+                  const isPatient = message.sender === "patient";
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex w-full ${isPatient ? "justify-start" : "justify-end"}`}
                     >
-                      <AvatarFallback className={`text-2xl ${message.sender === "patient" ? "text-[#3B82F6]" : "text-[#1D4ED8]"}`}>
-                        {message.sender === "patient" ? "👤" : "👨‍⚕️"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-neutral-charcoal">
-                            {message.sender === "patient" ? `Paciente #${caseNumber || patientId}` : t("therapist")}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(message.timestamp + "Z").toLocaleString("es-ES", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
+                      <div className={`flex gap-3 max-w-[85%] sm:max-w-[75%] ${isPatient ? "flex-row" : "flex-row-reverse"}`}>
+                        <Avatar className={`h-9 w-9 shrink-0 shadow-sm mt-1 ${isPatient ? "border-2 border-white" : "border-2 border-calm-teal/20"}`}>
+                          <AvatarFallback className={`text-sm font-semibold ${isPatient ? "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600" : "bg-gradient-to-br from-calm-teal to-teal-600 text-white"}`}>
+                            {isPatient ? "👤" : "👨‍⚕️"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className={`flex flex-col min-w-0 ${isPatient ? "items-start" : "items-end"}`}>
+                          <div className="flex items-center gap-2 mb-1.5 px-1 opacity-80">
+                            <span className="text-xs font-semibold text-neutral-charcoal">
+                              {isPatient ? `Paciente #${caseNumber || patientId}` : t("therapist")}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground font-medium">
+                              {new Date(message.timestamp + "Z").toLocaleTimeString("es-ES", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                          <div
+                            className={`px-4 py-3 rounded-2xl shadow-sm text-[15px] max-w-full overflow-hidden ${isPatient
+                              ? "bg-white border border-soft-gray text-neutral-charcoal rounded-tl-sm ring-1 ring-gray-900/5"
+                              : "bg-calm-teal text-white rounded-tr-sm ring-1 ring-calm-teal/5"
+                              }`}
+                          >
+                            <p className="leading-relaxed whitespace-pre-wrap break-words">{message.text}</p>
+                          </div>
                         </div>
                       </div>
-                      <p className="text-sm text-neutral-charcoal leading-relaxed">{message.text}</p>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
                 <div ref={endRef} />
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-medium text-neutral-charcoal">
-                  <Sparkles className="h-4 w-4 text-soft-lavender" />
-                  🤖 {t("AIGeneratedResponseSuggestions") || "Sugerencias IA"}
+            {/* AI Suggestions Panel */}
+            <div className="bg-white/95 backdrop-blur-md border-t border-soft-lavender/30 px-4 py-3 shrink-0 transition-all z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-calm-teal uppercase tracking-wider bg-calm-teal/10 px-3 py-1.5 rounded-full border border-calm-teal/20 whitespace-nowrap">
+                  <Sparkles className="h-3.5 w-3.5 text-calm-teal shrink-0" />
+                  <span className="hidden sm:inline">{t("AIGeneratedResponseSuggestions") || "Sugerencias IA"}</span>
+                  <span className="sm:hidden">IA</span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleGetSuggestions} disabled={loadingSuggestions} className="text-calm-teal text-xs">
-                  {loadingSuggestions ? "Cargando..." : "Generar Nuevas"}
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleGetSuggestions}
+                  disabled={loadingSuggestions}
+                  className="h-8 text-xs font-semibold text-calm-teal hover:text-calm-teal/80 hover:bg-calm-teal/10 rounded-full px-4 border border-transparent hover:border-calm-teal/20 transition-all ml-auto whitespace-nowrap"
+                >
+                  {loadingSuggestions ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-3.5 w-3.5 border-2 border-calm-teal border-t-transparent rounded-full animate-spin"></span>
+                      Generando...
+                    </span>
+                  ) : aiOptions.length > 0 ? "Regenerar" : "Generar"}
                 </Button>
               </div>
 
-              {loadingSuggestions && (
-                <div className="flex items-center gap-2 pb-4 text-calm-teal text-sm animate-pulse justify-center">
-                  <Sparkles className="w-4 h-4" />
-                  <span>Cargando recomendación IA...</span>
-                </div>
-              )}
-
               {aiOptions.length > 0 && !loadingSuggestions && (
-                <div className="space-y-2 relative">
-                  <Button variant="ghost" size="icon" className="absolute -top-8 right-0 h-6 w-6 rounded-full" onClick={() => setAiOptions([])}><X className="h-3 w-3" /></Button>
-                  {aiOptions.map((option, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleSelectOption(idx)} // <--- CAMBIA ESTO (antes tenías lógica manual aquí)
-                      className={`w-full text-left p-4 rounded-xl border transition-all ${selectedOption === idx
-                        ? "border-soft-lavender bg-soft-lavender text-neutral-charcoal font-medium shadow-sm"
-                        : "border-soft-gray hover:border-soft-lavender/50 hover:bg-muted/30"
+                <div className="mt-4 flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  {aiOptions.map((option, index) => (
+                    <div
+                      key={index}
+                      onClick={() => handleSelectOption(index)}
+                      className={`p-3 rounded-xl border text-sm cursor-pointer transition-all flex flex-col justify-between gap-2 shrink-0 ${selectedOption === index
+                        ? "bg-calm-teal/10 border-calm-teal text-neutral-charcoal shadow-sm"
+                        : "bg-white border-soft-gray hover:border-calm-teal/30 hover:bg-gray-50 text-muted-foreground"
                         }`}
                     >
-                      <p className="text-sm leading-relaxed text-neutral-charcoal">{option}</p>
-                    </button>
+                      <p className="leading-relaxed whitespace-pre-wrap">{option}</p>
+                      {selectedOption === index && (
+                        <span className="text-xs font-semibold text-calm-teal uppercase tracking-wider self-end mt-1">Seleccionada</span>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
             </div>
 
-            <div className="space-y-4 mt-4">
-              <label className="text-sm font-medium text-neutral-charcoal">{t("customResponse")}</label>
-              <Textarea
-                placeholder={t("typeMessage")}
-                value={customResponse}
-                onChange={(e) => setCustomResponse(e.target.value)}
-                className="min-h-[100px] rounded-xl border-soft-gray resize-none"
-                disabled={isSending}
-              />
+            {/* Input Area */}
+            <div className="px-4 py-3 bg-white border-t border-soft-gray shrink-0 z-10">
+              <div className="relative flex items-end gap-2 bg-muted/20 border border-soft-gray focus-within:border-calm-teal focus-within:ring-2 focus-within:ring-calm-teal/20 transition-all rounded-xl p-1.5 px-2">
+                <Textarea
+                  placeholder={t("typeMessage")}
+                  value={customResponse}
+                  onChange={(e) => setCustomResponse(e.target.value)}
+                  className="min-h-[48px] max-h-[140px] w-full resize-none border-0 bg-transparent focus-visible:ring-0 px-4 py-3.5 text-sm font-medium text-neutral-charcoal placeholder:text-muted-foreground"
+                  disabled={isSending}
+                />
+                <Button
+                  onClick={() => sendMessage(customResponse)}
+                  disabled={!customResponse.trim() || isSending}
+                  size="icon"
+                  className={`h-10 w-10 shrink-0 rounded-lg transition-all duration-200 mb-0.5 ${customResponse.trim() && !isSending
+                    ? "bg-calm-teal hover:bg-calm-teal/90 text-white shadow-sm hover:shadow-calm-teal/20"
+                    : "bg-gray-200 text-gray-400 scale-100"
+                    }`}
+                >
+                  {isSending ? (
+                    <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Send className="h-4.5 w-4.5 translate-x-0.5" />
+                  )}
+                </Button>
+              </div>
+              <div className="flex justify-end items-center mt-1 px-2 text-[10px] h-3">
+                {isSending && <span className="text-calm-teal animate-pulse font-semibold">Enviando mensaje...</span>}
+              </div>
             </div>
-
-            <Button
-              onClick={() => sendMessage(customResponse)}
-              disabled={!customResponse.trim() || isSending}
-              className="w-full rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white shadow-md"
-            >
-              {isSending ? (
-                <>
-                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                  {t("sending") || "Enviando..."}
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  {t("sendMessage")}
-                </>
-              )}
-            </Button>
-
           </CardContent>
         </Card>
       </div>
 
-      <div className="space-y-4">
-        <Card className="rounded-2xl border-soft-gray shadow-soft">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-soft-lavender" />
-              <CardTitle className="text-neutral-charcoal">{t("sessionDescription")}</CardTitle>
+      <div className="space-y-6 hidden lg:flex lg:flex-col h-[calc(100vh-120px)] min-h-[600px] self-start sticky top-6">
+        <Card className="gap-0 py-0 rounded-2xl border-soft-gray shadow-soft overflow-hidden group shrink-0 bg-white">
+          <CardHeader className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-100 transition-colors group-hover:bg-calm-teal/5 !pb-4 pt-5 px-5">
+            <div className="flex items-center gap-3">
+              <div className="bg-white p-2.5 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-200">
+                <FileText className="h-5 w-5 text-calm-teal" />
+              </div>
+              <div>
+                <CardTitle className="text-[17px] font-semibold text-neutral-charcoal">{t("sessionDescription")}</CardTitle>
+                <p className="text-[10px] text-muted-foreground mt-1 font-bold uppercase tracking-widest text-calm-teal/80">Título de la sesión</p>
+              </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-5">
             <Input
               placeholder={t("enterSummaryDescription")}
               value={sessionDescription}
               onChange={(e) => setSessionDescription(e.target.value)}
-              className="rounded-xl border-soft-gray"
+              className="rounded-xl border-gray-200 hover:border-gray-300 focus:border-calm-teal focus:ring-2 focus:ring-calm-teal/20 bg-gray-50 transition-all font-medium text-neutral-charcoal h-12 shadow-sm focus:bg-white px-4 placeholder:text-gray-400 placeholder:font-normal"
             />
-            <p className="text-xs text-muted-foreground mt-2">{t("enterSummaryNotes")}</p>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-soft-gray shadow-soft">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-soft-lavender" />
-              <CardTitle className="text-neutral-charcoal">{t("sessionNotes")}</CardTitle>
+        <Card className="gap-0 py-0 rounded-2xl border-soft-gray shadow-soft overflow-hidden group flex-1 flex flex-col min-h-0 bg-white">
+          <CardHeader className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-100 transition-colors group-hover:bg-calm-teal/5 !pb-4 pt-5 px-5 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="bg-white p-2.5 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-200">
+                <MessageSquare className="h-5 w-5 text-calm-teal" />
+              </div>
+              <div>
+                <CardTitle className="text-[17px] font-semibold text-neutral-charcoal">{t("sessionNotes")}</CardTitle>
+                <p className="text-[10px] text-muted-foreground mt-1 font-bold uppercase tracking-widest text-calm-teal/80">Apuntes Privados</p>
+              </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0 flex flex-col flex-1 overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-1 bg-calm-teal h-full rounded-l-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <Textarea
               placeholder={t("enterNotes")}
               value={sessionNotes}
               onChange={(e) => setSessionNotes(e.target.value)}
-              className="min-h-[250px] rounded-xl border-soft-gray resize-none"
+              className="flex-1 w-full h-full rounded-none border-0 focus-visible:ring-0 resize-none p-5 text-[14px] leading-relaxed bg-gray-50/50 hover:bg-gray-50 focus:bg-white transition-colors custom-scrollbar font-medium text-neutral-charcoal placeholder:text-gray-400 placeholder:font-normal"
             />
-            <p className="text-xs text-muted-foreground mt-3">
-              {t("enterNotesNotes")}
-            </p>
           </CardContent>
         </Card>
       </div>
-    </div >
+    </div>
   )
 }
