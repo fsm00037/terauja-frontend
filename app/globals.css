@@ -159,3 +159,18 @@
 .shadow-soft {
   box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.08), 0 4px 16px -4px rgba(0, 0, 0, 0.06);
 }
+
+/* Smooth fade for AI suggestion cards */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-slide-in {
+  animation: fadeSlideIn 0.7s ease-out both;
+}

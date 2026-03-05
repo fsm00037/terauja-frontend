@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Search, Send, Sparkles, MessageSquare, Save, FileText, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import * as api from "@/lib/api"
+import { getChatRecommendationsStream } from "@/lib/api"
 
 interface Message {
   id: string
@@ -31,7 +32,7 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
   const [messages, setMessages] = useState<Message[]>([])
   const [searchTerm, setSearchTerm] = useState("")
 
-  const [aiOptions, setAiOptions] = useState<string[]>([])
+  const [aiOptions, setAiOptions] = useState<(string | null)[]>([]) // null = still loading
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [customResponse, setCustomResponse] = useState("")
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
@@ -44,6 +45,7 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
   const [originalAiText, setOriginalAiText] = useState<string | null>(null);
   const [isAiUsed, setIsAiUsed] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const streamControllerRef = useRef<AbortController | null>(null);
 
   // Optimize: Only update state if messages have actually changed
   const loadMessages = async () => {
@@ -77,6 +79,15 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
     const interval = setInterval(loadMessages, 3000);
     return () => clearInterval(interval);
   }, [patientId])
+
+  // Cleanup stream on unmount
+  useEffect(() => {
+    return () => {
+      if (streamControllerRef.current) {
+        streamControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Only scroll to bottom on initial load or when new messages arrive
   const prevMessagesLength = useRef(0);
@@ -180,35 +191,59 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
     }
   }
 
-  const handleGetSuggestions = async () => {
-    setLoadingSuggestions(true)
-    try {
-      // Pasamos el patientId (asegúrate de que sea número)
-      const result = await api.getChatRecommendations(messages, Number(patientId));
-
-      if (result) {
-        setAiOptions(result.recommendations);
-        setAiSuggestionLogId(result.ai_suggestion_log_id); // Guardamos el ID para el log posterior
-        if (result.recommendations && result.recommendations.length > 0) {
-          setSelectedOption(null);
-          setOriginalAiText(null);
-          if (isAiUsed) {
-            setCustomResponse("");
-          }
-          setIsAiUsed(false);
-        }
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoadingSuggestions(false)
+  const handleGetSuggestions = () => {
+    // Cancelar stream anterior si existe
+    if (streamControllerRef.current) {
+      streamControllerRef.current.abort();
+      streamControllerRef.current = null;
     }
+
+    // Resetear estado
+    setLoadingSuggestions(true);
+    setAiOptions([null, null, null]); // 3 placeholders de carga
+    setSelectedOption(null);
+    setOriginalAiText(null);
+    setIsAiUsed(false);
+    setAiSuggestionLogId(null);
+
+    const currentMessages = messages; // captura en closure
+
+    const controller = getChatRecommendationsStream(
+      currentMessages,
+      Number(patientId),
+      // onOption: llamado cuando llega cada respuesta de modelo
+      (index, text) => {
+        setAiOptions(prev => {
+          const next = [...prev];
+          // Aseguramos que haya espacio
+          while (next.length <= index) next.push(null);
+          next[index] = text;
+          return next;
+        });
+      },
+      // onDone: llamado cuando los 3 modelos han terminado
+      (logId, _options) => {
+        setAiSuggestionLogId(logId);
+        setLoadingSuggestions(false);
+        streamControllerRef.current = null;
+      },
+      // onError
+      (err) => {
+        console.error("Stream error:", err);
+        setLoadingSuggestions(false);
+        streamControllerRef.current = null;
+      }
+    );
+
+    streamControllerRef.current = controller;
   }
 
   const handleSelectOption = (index: number) => {
+    const opt = aiOptions[index];
+    if (!opt) return; // Ignorar clic en placeholder de carga
     setSelectedOption(index);
-    setCustomResponse(aiOptions[index]);
-    setOriginalAiText(aiOptions[index]);
+    setCustomResponse(opt);
+    setOriginalAiText(opt);
     setIsAiUsed(true);
   };
 
@@ -336,22 +371,41 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
                 </Button>
               </div>
 
-              {aiOptions.length > 0 && !loadingSuggestions && (
+              {aiOptions.length > 0 && (
                 <div className="mt-4 flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                   {aiOptions.map((option, index) => (
-                    <div
-                      key={index}
-                      onClick={() => handleSelectOption(index)}
-                      className={`p-3 rounded-xl border text-sm cursor-pointer transition-all flex flex-col justify-between gap-2 shrink-0 ${selectedOption === index
-                        ? "bg-calm-teal/10 border-calm-teal text-neutral-charcoal shadow-sm"
-                        : "bg-white border-soft-gray hover:border-calm-teal/30 hover:bg-gray-50 text-gray-700 font-medium"
-                        }`}
-                    >
-                      <p className="leading-relaxed whitespace-pre-wrap">{option}</p>
-                      {selectedOption === index && (
-                        <span className="text-xs font-semibold text-calm-teal uppercase tracking-wider self-end mt-1">Seleccionada</span>
-                      )}
-                    </div>
+                    option === null ? (
+                      // Skeleton de carga para modelos pendientes
+                      <div
+                        key={index}
+                        className="p-3 rounded-xl border border-soft-gray bg-gray-50 animate-pulse flex flex-col gap-2 shrink-0"
+                      >
+                        <div className="h-3 bg-gray-200 rounded-full w-3/4" />
+                        <div className="h-3 bg-gray-200 rounded-full w-1/2" />
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className="h-1.5 w-1.5 rounded-full bg-calm-teal/40 animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="h-1.5 w-1.5 rounded-full bg-calm-teal/40 animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="h-1.5 w-1.5 rounded-full bg-calm-teal/40 animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        key={index}
+                        onClick={() => handleSelectOption(index)}
+                        style={{
+                          animation: "fadeSlideIn 0.7s ease-out both",
+                        }}
+                        className={`p-3 rounded-xl border text-sm cursor-pointer transition-all flex flex-col justify-between gap-2 shrink-0 ${selectedOption === index
+                          ? "bg-calm-teal/10 border-calm-teal text-neutral-charcoal shadow-sm"
+                          : "bg-white border-soft-gray hover:border-calm-teal/30 hover:bg-gray-50 text-gray-700 font-medium"
+                          }`}
+                      >
+                        <p className="leading-relaxed whitespace-pre-wrap">{option}</p>
+                        {selectedOption === index && (
+                          <span className="text-xs font-semibold text-calm-teal uppercase tracking-wider self-end mt-1">Seleccionada</span>
+                        )}
+                      </div>
+                    )
                   ))}
                 </div>
               )}
@@ -365,13 +419,13 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
                   value={customResponse}
                   onChange={(e) => setCustomResponse(e.target.value)}
                   className="min-h-[48px] max-h-[140px] w-full resize-none border-0 bg-transparent focus-visible:ring-0 px-4 py-3.5 text-sm font-medium text-neutral-charcoal placeholder:text-muted-foreground"
-                  disabled={isSending}
+                  disabled={isSending || loadingSuggestions}
                 />
                 <Button
                   onClick={() => sendMessage(customResponse)}
-                  disabled={!customResponse.trim() || isSending}
+                  disabled={!customResponse.trim() || isSending || loadingSuggestions}
                   size="icon"
-                  className={`h-10 w-10 shrink-0 rounded-lg transition-all duration-200 mb-0.5 ${customResponse.trim() && !isSending
+                  className={`h-10 w-10 shrink-0 rounded-lg transition-all duration-200 mb-0.5 ${customResponse.trim() && !isSending && !loadingSuggestions
                     ? "bg-calm-teal hover:bg-calm-teal/90 text-white shadow-sm hover:shadow-calm-teal/20"
                     : "bg-gray-200 text-gray-400 scale-100"
                     }`}

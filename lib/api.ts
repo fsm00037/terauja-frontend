@@ -401,6 +401,100 @@ export async function getChatRecommendations(messages: any[], patientId: number)
     }
 }
 
+export interface StreamOption {
+    type: "option";
+    index: number;
+    text: string;
+}
+
+export interface StreamDone {
+    type: "done";
+    ai_suggestion_log_id: number | null;
+    options: string[];
+}
+
+/**
+ * Streaming version of getChatRecommendations.
+ * Reads SSE from /chat/recommendations/stream and calls callbacks as events arrive.
+ * Returns an AbortController so the caller can cancel if needed.
+ */
+export function getChatRecommendationsStream(
+    messages: any[],
+    patientId: number,
+    onOption: (index: number, text: string) => void,
+    onDone: (logId: number | null, options: string[]) => void,
+    onError?: (err: string) => void
+): AbortController {
+    const controller = new AbortController();
+
+    const token = getToken();
+    const payload = messages.map(m => ({
+        role: m.sender === "therapist" ? "assistant" : "user",
+        content: m.text
+    }));
+
+    (async () => {
+        try {
+            const res = await fetch(`${API_URL}/chat/recommendations/stream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({ messages: payload, patient_id: patientId }),
+                signal: controller.signal,
+            });
+
+            if (!res.ok || !res.body) {
+                const text = await res.text().catch(() => "Unknown error");
+                onError?.(`Stream request failed: ${text}`);
+                return;
+            }
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+
+                // SSE lines are separated by \n\n
+                const parts = buffer.split("\n\n");
+                buffer = parts.pop() ?? "";
+
+                for (const part of parts) {
+                    const line = part.trim();
+                    if (!line.startsWith("data:")) continue;
+                    const jsonStr = line.slice("data:".length).trim();
+                    if (!jsonStr) continue;
+                    try {
+                        const event = JSON.parse(jsonStr);
+                        if (event.type === "option") {
+                            onOption(event.index, event.text);
+                        } else if (event.type === "done") {
+                            onDone(event.ai_suggestion_log_id ?? null, event.options ?? []);
+                        } else if (event.type === "error") {
+                            onError?.(event.message ?? "Unknown stream error");
+                        }
+                    } catch (parseErr) {
+                        console.error("SSE parse error:", parseErr, jsonStr);
+                    }
+                }
+            }
+        } catch (err: any) {
+            if (err?.name !== "AbortError") {
+                console.error("Stream fetch error:", err);
+                onError?.(String(err));
+            }
+        }
+    })();
+
+    return controller;
+}
+
 // --- Auth & Admin ---
 export async function login(email: string, password: string): Promise<LoginResponse | null> {
     try {
