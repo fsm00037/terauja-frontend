@@ -229,6 +229,21 @@ export async function regeneratePatientCode(patientId: string): Promise<string |
     }
 }
 
+export async function updatePatientCode(patientId: string, newCode: string): Promise<string | null> {
+    try {
+        const res = await fetchWithAuth(`${API_URL}/patients/${patientId}/code`, {
+            method: 'PATCH',
+            body: JSON.stringify({ new_code: newCode })
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.patient_code;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
 
 export interface Note {
     id: string;

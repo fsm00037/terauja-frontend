@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Search, Plus, Edit, Trash2, Eye, Copy, Link, ExternalLink, Users } from "lucide-react"
 import { CreatePatientModal } from "@/components/create-patient-modal"
+import { EditCodeModal } from "@/components/edit-code-modal"
 import { useLanguage } from "@/contexts/language-context"
 
 import { type Patient } from "@/lib/api"
@@ -20,6 +21,9 @@ export default function PatientsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [patients, setPatients] = useState<Patient[]>([])
+  
+  const [isEditCodeModalOpen, setIsEditCodeModalOpen] = useState(false)
+  const [selectedPatientForCodeEdit, setSelectedPatientForCodeEdit] = useState<Patient | null>(null)
 
   const loadPatients = async () => {
     const role = localStorage.getItem("userRole")
@@ -52,6 +56,15 @@ export default function PatientsPage() {
         alert("Error al eliminar el paciente")
       }
     }
+  }
+
+  const handleEditCode = (patient: Patient) => {
+    setSelectedPatientForCodeEdit(patient);
+    setIsEditCodeModalOpen(true);
+  }
+
+  const handleUpdatePatientCode = (patientId: string, updatedCode: string) => {
+    setPatients(patients.map(p => p.id === patientId ? { ...p, patientCode: updatedCode, name: updatedCode } : p));
   }
 
   const handleCreatePatient = (newPatient: Patient) => {
@@ -240,6 +253,18 @@ export default function PatientsPage() {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation()
+                              handleEditCode(patient)
+                            }}
+                            className="h-9 w-9 p-0 rounded-lg hover:bg-calm-teal/10 hover:text-calm-teal"
+                            title="Editar Número de Caso"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
                               handleDelete(patient.id)
                             }}
                             className="h-9 w-9 p-0 rounded-lg hover:bg-soft-coral/10 hover:text-soft-coral"
@@ -261,6 +286,13 @@ export default function PatientsPage() {
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
         onCreatePatient={handleCreatePatient}
+      />
+
+      <EditCodeModal
+        open={isEditCodeModalOpen}
+        onOpenChange={setIsEditCodeModalOpen}
+        patient={selectedPatientForCodeEdit}
+        onUpdatePatientCode={handleUpdatePatientCode}
       />
 
 
