@@ -413,7 +413,7 @@ const translations = {
     enterSummaryNotes: "Esto será mostrado en el historial de la sesión",
     searchConversation: "Buscar en la conversación...",
     sessionChat: "Chat de la Sesión",
-
+    
     // Profile
     profileSettings: "Configuración de Perfil",
     availability: "Disponibilidad",
@@ -443,6 +443,8 @@ const translations = {
     sessionDetails: "Detalles de la Sesión",
     duration: "Duración",
     minutes: "minutos",
+    editSession: "Editar Sesión",
+  
 
     // Assessment View
     psychologicalAssessment: "Resultados de Evaluación Psicológica",

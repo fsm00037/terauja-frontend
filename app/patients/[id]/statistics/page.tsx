@@ -799,6 +799,48 @@ export default function PatientStatisticsPage() {
     setIsStatDialogOpen(true)
   }
 
+  const [isEditSessionDetailsDialogOpen, setIsEditSessionDetailsDialogOpen] = useState(false)
+  const [editingSessionForDetails, setEditingSessionForDetails] = useState<Session | null>(null)
+  const [editSessionDetailsFormData, setEditSessionDetailsFormData] = useState({
+    description: "",
+    notes: ""
+  })
+
+  const handleOpenEditSessionDetailsDialog = (session: Session) => {
+    setEditingSessionForDetails(session)
+    setEditSessionDetailsFormData({
+      description: session.description || "",
+      notes: session.notes || ""
+    })
+    setIsEditSessionDetailsDialogOpen(true)
+  }
+
+  const handleSaveEditedSessionDetails = async () => {
+    if (!editingSessionForDetails) return
+
+    try {
+      const updated = await api.updateSession(editingSessionForDetails.id, {
+        description: editSessionDetailsFormData.description,
+        notes: editSessionDetailsFormData.notes
+      })
+      if (updated) {
+        setSessions(sessions.map(s => s.id === editingSessionForDetails.id ? updated : s))
+        toast({
+          title: t("success"),
+          description: t("sessionUpdated") || "Sesión actualizada correctamente",
+        })
+        setIsEditSessionDetailsDialogOpen(false)
+        setEditingSessionForDetails(null)
+      }
+    } catch (error) {
+      toast({
+        title: t("error"),
+        description: "Error al actualizar la sesión",
+        variant: "destructive",
+      })
+    }
+  }
+
   const handleSaveStat = async () => {
     if (!statFormData.label || !statFormData.value) return
 
@@ -1259,7 +1301,11 @@ export default function PatientStatisticsPage() {
               )}
               <div className="space-y-4">
                 {sessions.map((session) => (
-                  <div key={session.id} className="p-5 rounded-xl bg-muted/30 border border-soft-gray">
+                  <div
+                    key={session.id}
+                    onClick={() => setViewingSessionId(session.id)}
+                    className="p-5 rounded-xl bg-muted/30 border border-soft-gray cursor-pointer hover:bg-muted/50 transition-all group/card active:scale-[0.99]"
+                  >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-lg bg-soft-lavender/20 flex items-center justify-center">
@@ -1280,7 +1326,15 @@ export default function PatientStatisticsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteSession(session.id)}
+                          onClick={(e) => { e.stopPropagation(); handleOpenEditSessionDetailsDialog(session); }}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-neutral-charcoal hover:bg-muted rounded-lg"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleDeleteSession(session.id); }}
                           className="h-8 w-8 p-0 text-soft-coral hover:text-soft-coral/80 hover:bg-soft-coral/10 rounded-lg"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1288,7 +1342,7 @@ export default function PatientStatisticsPage() {
                       </div>
                     </div>
                     <Button
-                      onClick={() => setViewingSessionId(session.id)}
+                      onClick={(e) => { e.stopPropagation(); setViewingSessionId(session.id); }}
                       variant="outline"
                       size="sm"
                       className="rounded-lg border-soft-gray ml-13"
@@ -1297,7 +1351,7 @@ export default function PatientStatisticsPage() {
                       {t("viewChatTranscript")}
                     </Button>
                     <Button
-                      onClick={() => setStatsSessionId(session.id)}
+                      onClick={(e) => { e.stopPropagation(); setStatsSessionId(session.id); }}
                       variant="outline"
                       size="sm"
                       className="rounded-lg border-soft-gray ml-2 text-calm-teal hover:text-calm-teal/80 hover:bg-calm-teal/5"
@@ -1491,7 +1545,8 @@ export default function PatientStatisticsPage() {
                 <div className="w-80 border-l border-soft-gray bg-muted/20 overflow-y-auto">
                   <div className="p-6 h-full flex flex-col space-y-4">
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                        <Edit className="h-3 w-3" />
                         {t("sessionDescription") || "Descripción de la sesión"}
                       </label>
                       <Input
@@ -1502,7 +1557,8 @@ export default function PatientStatisticsPage() {
                       />
                     </div>
                     <div className="flex-1 flex flex-col min-h-0">
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                        <Edit className="h-3 w-3" />
                         {t("sessionNotes") || "Notas de la sesión"}
                       </label>
                       <Textarea
@@ -1965,7 +2021,55 @@ export default function PatientStatisticsPage() {
           </Card>
         )}
       </div>
+      {/* --- Dialog for Edit Session Details --- */}
+      {isEditSessionDetailsDialogOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-md rounded-2xl border-soft-gray shadow-soft bg-white p-6">
+            <h2 className="text-lg font-semibold mb-4 text-neutral-charcoal">
+              {t("editSession") || "Editar Sesión"}
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block text-neutral-charcoal">
+                  {t("sessionDescription") || "Descripción"}
+                </label>
+                <Input
+                  className="rounded-xl border-soft-gray focus:ring-calm-teal/20"
+                  placeholder={t("enterDescription") || "Descripción de la sesión..."}
+                  value={editSessionDetailsFormData.description}
+                  onChange={(e) => setEditSessionDetailsFormData({ ...editSessionDetailsFormData, description: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block text-neutral-charcoal">
+                  {t("sessionNotes") || "Notas"}
+                </label>
+                <Textarea
+                  className="min-h-[120px] rounded-xl border-soft-gray focus:ring-calm-teal/20"
+                  placeholder={t("addSessionNotes") || "Notas adicionales..."}
+                  value={editSessionDetailsFormData.notes}
+                  onChange={(e) => setEditSessionDetailsFormData({ ...editSessionDetailsFormData, notes: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button 
+                variant="ghost" 
+                onClick={() => setIsEditSessionDetailsDialogOpen(false)} 
+                className="rounded-xl"
+              >
+                {t("cancel")}
+              </Button>
+              <Button 
+                onClick={handleSaveEditedSessionDetails} 
+                className="rounded-xl bg-calm-teal hover:bg-calm-teal/90 text-white"
+              >
+                {t("save")}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </DashboardLayout >
   )
 }
-
