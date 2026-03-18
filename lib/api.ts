@@ -1280,11 +1280,29 @@ export async function getDashboardStats(psychologistId?: string) {
             url += `?psychologist_id=${psychologistId}`;
         }
         const res = await fetchWithAuth(url);
-        if (!res.ok) return { total_patients: 0, total_messages: 0, recent_activity: [], completed_questionnaires: 0, pending_questionnaires: 0 };
+        if (!res.ok) return { 
+            total_patients: 0, 
+            total_messages: 0, 
+            unread_messages: 0,
+            recent_activity: [], 
+            completed_questionnaires: 0, 
+            unread_questionnaires: 0,
+            pending_questionnaires: 0,
+            online_patients: 0
+        };
         return await res.json();
     } catch (e) {
         console.error(e);
-        return { total_patients: 0, total_messages: 0, recent_activity: [], completed_questionnaires: 0, pending_questionnaires: 0 };
+        return { 
+            total_patients: 0, 
+            total_messages: 0, 
+            unread_messages: 0,
+            recent_activity: [], 
+            completed_questionnaires: 0, 
+            unread_questionnaires: 0,
+            pending_questionnaires: 0,
+            online_patients: 0
+        };
     }
 }
 

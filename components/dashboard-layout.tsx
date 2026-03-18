@@ -11,6 +11,7 @@ import { Users, Home, User, LogOut, Menu, X, Settings, ClipboardList, Shield } f
 import { useLanguage } from "@/contexts/language-context"
 import { LanguageToggle } from "@/components/language-toggle"
 import * as api from "@/lib/api"
+import { NotificationListener } from "@/components/notification-listener"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -88,6 +89,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-soft-blue/20 via-soft-lavender/20 to-soft-pink/20">
+      <NotificationListener />
       {/* Mobile menu button */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <Button
