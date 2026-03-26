@@ -31,6 +31,9 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
   const { t } = useLanguage()
   const [messages, setMessages] = useState<Message[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [patientIsTyping, setPatientIsTyping] = useState(false)
+  const typingRef = useRef<NodeJS.Timeout | null>(null)
+  const lastTypedSignalRef = useRef<number>(0)
 
   const [aiOptions, setAiOptions] = useState<(string | null)[]>([]) // null = still loading
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
@@ -80,6 +83,18 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
     return () => clearInterval(interval);
   }, [patientId])
 
+  useEffect(() => {
+    const checkTyping = async () => {
+      const typing = await api.getTypingStatus(patientId);
+      if (typing) {
+        setPatientIsTyping(typing.patient_is_typing);
+      }
+    };
+    checkTyping();
+    const interval = setInterval(checkTyping, 3000);
+    return () => clearInterval(interval);
+  }, [patientId])
+
   // Cleanup stream on unmount
   useEffect(() => {
     return () => {
@@ -91,13 +106,15 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
 
   // Only scroll to bottom on initial load or when new messages arrive
   const prevMessagesLength = useRef(0);
+  const prevTyping = useRef(false);
 
   useEffect(() => {
-    if (messages.length > prevMessagesLength.current) {
+    if (messages.length > prevMessagesLength.current || (patientIsTyping && !prevTyping.current)) {
       endRef.current?.scrollIntoView({ behavior: "smooth" });
     }
     prevMessagesLength.current = messages.length;
-  }, [messages]);
+    prevTyping.current = patientIsTyping;
+  }, [messages, patientIsTyping]);
 
 
   // Track the last processed message ID to prevent duplicate triggers
@@ -120,6 +137,12 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
     if (!text.trim() || isSending) return;
 
     setIsSending(true);
+    
+    if (typingRef.current) clearTimeout(typingRef.current);
+    api.setTypingStatus(patientId, false);
+    typingRef.current = null;
+    lastTypedSignalRef.current = 0;
+    
     try {
       // If AI suggestions were available (aiSuggestionLogId is set), we track it.
       // was_edited_by_human is true if we either edited a suggestion OR ignored them for a custom message.
@@ -247,6 +270,26 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
     setIsAiUsed(true);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setCustomResponse(e.target.value);
+    
+    const now = Date.now();
+    if (now - lastTypedSignalRef.current > 5000) {
+      api.setTypingStatus(patientId, true);
+      lastTypedSignalRef.current = now;
+    }
+    
+    if (typingRef.current) {
+      clearTimeout(typingRef.current);
+    }
+    
+    typingRef.current = setTimeout(() => {
+      api.setTypingStatus(patientId, false);
+      typingRef.current = null;
+      lastTypedSignalRef.current = 0;
+    }, 2000);
+  };
+
   const filteredMessages = messages.filter((msg) => msg.text.toLowerCase().includes(searchTerm.toLowerCase()))
 
   return (
@@ -263,11 +306,11 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
                   <CardTitle className="text-lg font-semibold text-neutral-charcoal tracking-tight">{t("currentChatSession")}</CardTitle>
                   <div className="flex items-center gap-2 mt-1.5">
                     <span className="relative flex h-2.5 w-2.5">
-                      {isOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-                      <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? "bg-emerald-500" : "bg-gray-400"}`}></span>
+                      {(patientIsTyping || isOnline) && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+                      <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${(patientIsTyping || isOnline) ? "bg-emerald-500" : "bg-gray-400"}`}></span>
                     </span>
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      {isOnline ? t("online") : t("offline")}
+                    <span className={`text-xs font-semibold uppercase tracking-wider ${patientIsTyping ? "text-emerald-600 animate-pulse" : "text-muted-foreground"}`}>
+                      {patientIsTyping ? "Escribiendo..." : (isOnline ? t("online") : t("offline"))}
                     </span>
                   </div>
                 </div>
@@ -342,6 +385,22 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
                     </div>
                   )
                 })}
+                {patientIsTyping && (
+                  <div className="flex w-full justify-start">
+                    <div className="flex gap-3 max-w-[85%] sm:max-w-[75%] flex-row">
+                      <Avatar className="h-9 w-9 shrink-0 shadow-sm mt-1 border-2 border-white">
+                        <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600">👤</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col min-w-0 items-start">
+                        <div className="px-4 py-3 rounded-2xl shadow-sm bg-white border border-soft-gray text-neutral-charcoal rounded-tl-sm ring-1 ring-gray-900/5 flex items-center gap-1.5 h-[42px] mt-4">
+                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div ref={endRef} />
               </div>
             </div>
@@ -417,7 +476,7 @@ export function ChatTranscript({ patientId, caseNumber, onSaveAndClose, isOnline
                 <Textarea
                   placeholder={t("typeMessage")}
                   value={customResponse}
-                  onChange={(e) => setCustomResponse(e.target.value)}
+                  onChange={handleInputChange}
                   className="min-h-[48px] max-h-[140px] w-full resize-none border-0 bg-transparent focus-visible:ring-0 px-4 py-3.5 text-sm font-medium text-neutral-charcoal placeholder:text-muted-foreground"
                   disabled={isSending || loadingSuggestions}
                 />
